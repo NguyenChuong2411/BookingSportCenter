@@ -1,0 +1,28 @@
+# ========================
+# FLUTTER / DART
+# ========================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/Flutter/
+.pub-cache/
+.pub/
+
+# ========================
+# C# / .NET CORE
+# ========================
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+appsettings.Development.json
+appsettings.local.json
+
+# ========================
+# OS JUNK
+# ========================
+.DS_Store
+Thumbs.db
