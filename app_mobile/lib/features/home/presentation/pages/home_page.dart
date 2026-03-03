@@ -132,9 +132,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-
-      // Bottom Navigation Bar
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -337,54 +334,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.backgroundWhite,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.home, true),
-              _buildNavItem(Icons.location_on_outlined, false),
-              _buildNavItem(Icons.favorite_border, false),
-              _buildNavItem(Icons.person_outline, false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, bool isActive) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.primaryGreen : Colors.transparent,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        icon,
-        color: isActive ? AppColors.textWhite : AppColors.textSecondary,
-        size: 24,
       ),
     );
   }
