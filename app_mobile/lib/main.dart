@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
-import 'features/home/presentation/pages/home_page.dart';
+import 'features/home/presentation/pages/main_scaffold.dart';
 
 void main() {
   runApp(const SpotOnApp());
@@ -16,7 +16,7 @@ class SpotOnApp extends StatelessWidget {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const HomePage(),
+      home: const MainScaffold(),
     );
   }
 }
