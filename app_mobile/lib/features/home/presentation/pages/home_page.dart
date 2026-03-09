@@ -18,14 +18,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   DateTime? _selectedDate;
 
-  // Mock user data
   final User _user = User(
     id: '1',
     name: 'Minh Sang',
     email: 'minhsang@example.com',
   );
 
-  // Mock bookings data
   final List<Booking> _bookings = [
     Booking(
       id: '1',
@@ -47,7 +45,6 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  // Mock available courts data
   final List<Court> _availableCourts = [
     Court(
       id: '1',
@@ -95,7 +92,6 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  // Generate dates for the next 14 days
   List<DateTime> _generateDates() {
     final now = DateTime.now();
     return List.generate(14, (index) => now.add(Duration(days: index)));
@@ -104,32 +100,21 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          // Header with gradient
-          _buildHeader(),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: _buildHeader()),
 
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 24),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // Your Bookings Section
-                  _buildYourBookingsSection(),
+          SliverToBoxAdapter(child: _buildYourBookingsSection()),
 
-                  const SizedBox(height: 24),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                  // Available Courts Section
-                  _buildAvailableCourtsSection(),
+          _buildAvailableCourtsHeader(),
 
-                  const SizedBox(height: 100), // Space for bottom nav
-                ],
-              ),
-            ),
-          ),
+          _buildAvailableCourtsList(),
+
+          const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
         ],
       ),
     );
@@ -137,6 +122,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeader() {
     return Container(
+      width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -144,56 +130,52 @@ class _HomePageState extends State<HomePage> {
           colors: [Color(0xFF0000FF), Color(0xFF0000CC)],
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(45),
+          bottomRight: Radius.circular(45),
         ),
       ),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.hello,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textWhite,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _user.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textWhite,
-                    ),
-                  ),
-                ],
-              ),
               Container(
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: AppColors.backgroundWhite,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: const Icon(
                   Icons.person,
                   color: AppColors.textSecondary,
-                  size: 24,
+                  size: 30,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              const Text(
+                AppStrings.hello,
+                style: TextStyle(fontSize: 24, color: AppColors.textWhite),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                _user.name,
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textWhite,
                 ),
               ),
             ],
@@ -215,19 +197,17 @@ class _HomePageState extends State<HomePage> {
               const Text(
                 AppStrings.yourBookings,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 23,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
               TextButton(
-                onPressed: () {
-                  // Navigate to all bookings
-                },
+                onPressed: () {},
                 child: const Text(
                   AppStrings.seeAll,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryGreen,
                   ),
@@ -236,20 +216,17 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
+
         const SizedBox(height: 16),
+
         SizedBox(
-          height: 100,
+          height: 130,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: _bookings.length,
             itemBuilder: (context, index) {
-              return BookingCard(
-                booking: _bookings[index],
-                onTap: () {
-                  // Handle booking tap
-                },
-              );
+              return BookingCard(booking: _bookings[index], onTap: () {});
             },
           ),
         ),
@@ -257,82 +234,85 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildAvailableCourtsSection() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryGreen.withValues(alpha: 0.9),
-            const Color(0xFF00DD00),
-          ],
+  Widget _buildAvailableCourtsHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primaryGreen.withValues(alpha: 0.9),
+              const Color(0xFF00DD00),
+            ],
+          ),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(45),
+            topRight: Radius.circular(45),
+          ),
         ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(32),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                AppStrings.availableCourtNearYou,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textWhite,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              const Text(
+                AppStrings.selectTheDaysAvailable,
+                style: TextStyle(fontSize: 15, color: AppColors.textWhite),
+              ),
+
+              const SizedBox(height: 16),
+
+              DateSelector(
+                dates: _generateDates(),
+                selectedDate: _selectedDate,
+                onDateSelected: (date) {
+                  setState(() {
+                    _selectedDate = date;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    );
+  }
+
+  Widget _buildAvailableCourtsList() {
+    return SliverToBoxAdapter(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primaryGreen.withValues(alpha: 0.9),
+              const Color(0xFF00DD00),
+            ],
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              AppStrings.availableCourtNearYou,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textWhite,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              AppStrings.selectTheDaysAvailable,
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textWhite,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Date Selector
-            DateSelector(
-              dates: _generateDates(),
-              selectedDate: _selectedDate,
-              onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                });
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            // Available Courts List
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _availableCourts.length,
-              itemBuilder: (context, index) {
-                return CourtCard(
-                  court: _availableCourts[index],
-                  onBookNow: () {
-                    // Handle book now action
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Booking ${_availableCourts[index].name}',
-                        ),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
+          children: _availableCourts.map((court) {
+            return CourtCard(
+              court: court,
+              onBookNow: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Booking ${court.name}')),
                 );
               },
-            ),
-          ],
+            );
+          }).toList(),
         ),
       ),
     );
