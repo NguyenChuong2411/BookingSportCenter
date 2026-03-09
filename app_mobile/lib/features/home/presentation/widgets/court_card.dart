@@ -15,11 +15,11 @@ class CourtCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
+            blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
@@ -27,6 +27,7 @@ class CourtCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Court Image
             Container(
@@ -34,14 +35,10 @@ class CourtCard extends StatelessWidget {
               height: 60,
               decoration: BoxDecoration(
                 color: AppColors.backgroundGray,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.sports_soccer,
-                color: AppColors.textSecondary,
-                size: 30,
+                borderRadius: BorderRadius.circular(60),
               ),
             ),
+
             const SizedBox(width: 16),
 
             // Court Info
@@ -49,49 +46,65 @@ class CourtCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Court Name
                   Text(
                     court.name,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+
                   const SizedBox(height: 4),
+
+                  // Address
                   Text(
                     court.address,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  RatingWidget(rating: court.rating, size: 12),
-                ],
-              ),
-            ),
 
-            // Book Now Button
-            ElevatedButton(
-              onPressed: onBookNow,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.buttonBlue,
-                foregroundColor: AppColors.textWhite,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text(
-                'Book now',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  const SizedBox(height: 8),
+
+                  // Rating + Book Now (cùng hàng)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RatingWidget(rating: court.rating, size: 15),
+                      const Spacer(),
+
+                      SizedBox(
+                        height: 35,
+                        child: ElevatedButton(
+                          onPressed: onBookNow,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.buttonBlue,
+                            foregroundColor: AppColors.textWhite,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Book now',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
