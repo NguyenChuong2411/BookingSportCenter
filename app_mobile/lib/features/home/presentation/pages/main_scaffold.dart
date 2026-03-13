@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import 'home_page.dart';
 import '../../../map/presentation/pages/map_page.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../event/presentation/pages/event_page.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -17,8 +19,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   final List<Widget> _pages = [
     const HomePage(),
     const MapPage(),
-    const PlaceholderPage(title: 'Favorites'),
-    const PlaceholderPage(title: 'Profile'),
+    const EventPage(),
+    const ProfilePage(),
   ];
 
   void _onNavItemTapped(int index) {
@@ -59,7 +61,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             children: [
               _buildNavItem(Icons.home, 0),
               _buildNavItem(Icons.location_on_outlined, 1),
-              _buildNavItem(Icons.favorite_border, 2),
+              _buildNavItem(Icons.star_border, 2),
               _buildNavItem(Icons.person_outline, 3),
             ],
           ),
