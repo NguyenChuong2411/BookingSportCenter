@@ -7,6 +7,7 @@ import '../../domain/entities/user.dart';
 import '../widgets/booking_card.dart';
 import '../widgets/court_card.dart';
 import '../widgets/date_selector.dart';
+import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -307,8 +308,11 @@ class _HomePageState extends State<HomePage> {
             return CourtCard(
               court: court,
               onBookNow: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Booking ${court.name}')),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SelectSlotsPage(),
+                  ),
                 );
               },
             );
