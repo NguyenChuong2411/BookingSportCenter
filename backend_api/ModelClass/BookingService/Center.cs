@@ -46,5 +46,9 @@ namespace ModelClass.BookingService
 
         // Relationship (1 Center có nhiều Court)
         public ICollection<Court> Courts { get; set; } = new List<Court>();
+
+        
+        // 🔴 THÊM ĐÚNG 1 DÒNG NÀY ĐỂ EF CORE BIẾT ĐƯỜNG LẤY ẢNH:
+        public ICollection<CenterImage> CenterImages { get; set; } = new List<CenterImage>();
     }
 }
