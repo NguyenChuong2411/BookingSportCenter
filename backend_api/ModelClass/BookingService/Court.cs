@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ModelClass.Booking
+namespace ModelClass.BookingService
 {
     [Table("courts", Schema = "booking")]
     public class Court
