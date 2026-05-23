@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../home/presentation/pages/main_scaffold.dart';
-import 'sign_up_page.dart'; // Import trang đăng ký để lát nữa nhấn chuyển qua lại
+import 'sign_up_page.dart';
+import 'start_page.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Thư viện xử lý đọc logo SVG độc quyền
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -27,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() {
-    // Luồng đi đường tắt: Bấm Login là bay thẳng vào màn hình chính diện (MainScaffold) luôn
+    // Luồng đi tắt: Bấm đăng nhập chuyển ngay vào bộ khung chính MainScaffold
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const MainScaffold()),
@@ -41,51 +43,65 @@ class _LoginPageState extends State<LoginPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. HEADER GRADIENT CÓ LOGO APP SPOTON
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 80, bottom: 50),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF0000FF), Color(0xFF0000CC)],
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(50),
-                  bottomRight: Radius.circular(50),
-                ),
-              ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.sports_soccer_rounded,
-                    size: 70,
-                    color: Colors.white,
+            // 1. HEADER GRADIENT THIẾT KẾ PHÁ CÁCH THEO MOCKUP ĐÚNG TỶ LỆ PIXEL
+            Stack(
+              clipBehavior:
+                  Clip.none, // Cho phép hộp logo phình rộng vượt khung
+              children: [
+                // Khối nền xanh dương chủ đạo phía sau
+                Container(
+                  width: double.infinity,
+                  height: 180,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF0000FF), Color(0xFF0000CC)],
+                    ),
                   ),
-                  SizedBox(height: 12),
-                  Text(
-                    "SpotOn",
-                    style: TextStyle(
+                ),
+
+                // Khối chữ nhật trắng to nằm lọt lòng sát đáy nền xanh dương, bo 2 góc trên
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 90,
+                    decoration: const BoxDecoration(
                       color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(35),
+                        topRight: Radius.circular(35),
+                      ),
                     ),
                   ),
-                  SizedBox(height: 6),
-                  Text(
-                    "Sport Center Booking Application",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
+                ),
+
+                // Hộp vuông trắng bo tròn 4 góc đặt lệch trái đè lên khối chữ nhật, chứa logo SpotOn
+                Positioned(
+                  bottom: 25,
+                  left: 36,
+                  child: Container(
+                    width: 105,
+                    height: 105,
+                    padding: const EdgeInsets.all(
+                      12,
+                    ), // Tạo khoảng đệm cho logo SVG sắc nét
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: SvgPicture.asset(
+                      'assets/icons/logo.svg',
+                      fit: BoxFit.contain,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
 
+            // PHẦN THÂN GIAO DIỆN NHẬP LIỆU (FORM TEXTFIELD)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
               child: Column(
@@ -106,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // 2. Ô NHẬP EMAIL
+                  // 2. Ô NHẬP EMAIL ADDRESS
                   _buildInputFieldLabel("Email Address"),
                   _buildTextField(
                     controller: _emailController,
@@ -115,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. Ô NHẬP MẬT KHẨU
+                  // 3. Ô NHẬP PASSWORD
                   _buildInputFieldLabel("Password"),
                   _buildTextField(
                     controller: _passwordController,
@@ -130,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
 
-                  // Nút quên mật khẩu trang trí
+                  // Nút bấm Quên mật khẩu
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -146,7 +162,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // 4. NÚT ĐĂNG NHẬP THẦN TỐC
+                  // 4. BỘ NÚT ĐĂNG NHẬP (SIGN IN)
                   SizedBox(
                     width: double.infinity,
                     height: 54,
@@ -171,7 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Khối chuyển đăng ký tài khoản mới nhanh
+                  // Khối chuyển hướng sang trang Sign Up
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -181,7 +197,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          // Chuyển sang trang đăng ký thật khi bấm chữ Sign Up
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
@@ -236,7 +251,7 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

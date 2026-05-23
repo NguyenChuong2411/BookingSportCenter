@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import 'login_page.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Thư viện đọc logo SVG
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -45,49 +46,83 @@ class _SignUpPageState extends State<SignUpPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 60, bottom: 35),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF0000FF), Color(0xFF0000CC)],
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(45),
-                  bottomRight: Radius.circular(45),
-                ),
-              ),
-              child: const Column(
-                children: [
-                  Icon(
-                    Icons.sports_soccer_rounded,
-                    size: 50,
-                    color: Colors.white,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Create Account",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
+            // 1. HEADER GRADIENT THIẾT KẾ ĐỒNG BỘ VỚI LOGIN PAGE
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Khối nền xanh dương chủ đạo
+                Container(
+                  width: double.infinity,
+                  height: 180,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF0000FF), Color(0xFF0000CC)],
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Join SpotOn to book your field instantly",
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+
+                // Khối chữ nhật trắng tràn sát viền màn hình, bo 2 góc trên
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 90,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(35),
+                        topRight: Radius.circular(35),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
+
+                // Hộp vuông trắng chứa logo đặt lệch trái (Index đồng bộ với Login)
+                Positioned(
+                  bottom: 25, // Khớp với toạ độ Login của ông
+                  left: 36,
+                  child: Container(
+                    width: 105,
+                    height: 105,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: SvgPicture.asset(
+                      'assets/icons/logo.svg',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ],
             ),
+
+            // PHẦN THÂN GIAO DIỆN ĐĂNG KÝ
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text(
+                    "Create Account",
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    "Join SpotOn to book your field instantly",
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Ô NHẬP FULL NAME
                   _buildInputFieldLabel("Full Name"),
                   _buildTextField(
                     controller: _nameController,
@@ -95,6 +130,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 16),
+
+                  // Ô NHẬP EMAIL
                   _buildInputFieldLabel("Email Address"),
                   _buildTextField(
                     controller: _emailController,
@@ -103,6 +140,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                   const SizedBox(height: 16),
+
+                  // Ô NHẬP PHONE NUMBER
                   _buildInputFieldLabel("Phone Number"),
                   _buildTextField(
                     controller: _phoneController,
@@ -111,6 +150,8 @@ class _SignUpPageState extends State<SignUpPage> {
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 16),
+
+                  // Ô NHẬP PASSWORD
                   _buildInputFieldLabel("Password"),
                   _buildTextField(
                     controller: _passwordController,
@@ -124,7 +165,10 @@ class _SignUpPageState extends State<SignUpPage> {
                       });
                     },
                   ),
-                  const SizedBox(height: 30),
+
+                  const SizedBox(height: 32),
+
+                  // NÚT ĐĂNG KÝ (SIGN UP)
                   SizedBox(
                     width: double.infinity,
                     height: 54,
@@ -147,7 +191,10 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 24),
+
+                  // Chuyển về trang Sign In
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -212,7 +259,7 @@ class _SignUpPageState extends State<SignUpPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
