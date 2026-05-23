@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/entities/event.dart';
+import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
 
 class EventDetailPage extends StatelessWidget {
   final Event event;
@@ -247,12 +248,10 @@ class EventDetailPage extends StatelessWidget {
         height: 54,
         child: ElevatedButton(
           onPressed: () {
-            // TODO: Implement booking flow
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Booking for ${event.title}'),
-                backgroundColor: AppColors.primaryBlue,
-              ),
+            // ĐIỀU HƯỚNG CHÍNH XÁC: Nhấn Book Now trong chi tiết event sẽ nhảy sang chọn slot sân bóng
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SelectSlotsPage()),
             );
           },
           style: ElevatedButton.styleFrom(

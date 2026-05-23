@@ -8,9 +8,12 @@ import '../widgets/booking_card.dart';
 import '../widgets/court_card.dart';
 import '../widgets/date_selector.dart';
 import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final VoidCallback? onAvatarPressed;
+
+  const HomePage({super.key, this.onAvatarPressed});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -98,6 +101,40 @@ class _HomePageState extends State<HomePage> {
     return List.generate(14, (index) => now.add(Duration(days: index)));
   }
 
+  // Hàm bổ trợ đổi số tháng sang chữ tiếng Anh
+  String _getMonthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[month - 1];
+  }
+
+  // Hàm quét mảng 14 ngày để trả về chuỗi tên tháng (Xử lý được cả trường hợp giao giữa 2 tháng)
+  String _getAvailableMonthsString() {
+    final dates = _generateDates();
+    if (dates.isEmpty) return '';
+
+    final firstMonth = dates.first.month;
+    final lastMonth = dates.last.month;
+
+    if (firstMonth == lastMonth) {
+      return _getMonthName(firstMonth); // Ví dụ: "May"
+    } else {
+      return '${_getMonthName(firstMonth)} - ${_getMonthName(lastMonth)}'; // Ví dụ: "May - June"
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,24 +178,34 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundWhite,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: AppColors.textSecondary,
-                  size: 30,
+              // 🔴 BỌC AVATAR BẰNG INKWELL ĐỂ TẠO HIỆU ỨNG GỢN SÓNG VÀ CHUYỂN TRANG
+              InkWell(
+                onTap: () {
+                  // 🔴 KÍCH HOẠT HÀM ĐỔI TAB CỦA CHA TRUYỀN XUỐNG
+                  if (widget.onAvatarPressed != null) {
+                    widget.onAvatarPressed!();
+                  }
+                },
+                borderRadius: BorderRadius.circular(28),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundWhite,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 30,
+                  ),
                 ),
               ),
 
@@ -266,9 +313,14 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 8),
 
-              const Text(
-                AppStrings.selectTheDaysAvailable,
-                style: TextStyle(fontSize: 15, color: AppColors.textWhite),
+              // 🔴 CẬP NHẬT: Thay chuỗi tĩnh bằng chuỗi động kết hợp tên tháng thời gian thực
+              Text(
+                "${AppStrings.selectTheDaysAvailable} in ${_getAvailableMonthsString()}"
+                    .toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textWhite,
+                ),
               ),
 
               const SizedBox(height: 16),

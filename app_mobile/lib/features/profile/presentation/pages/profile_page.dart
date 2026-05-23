@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/entities/user_profile.dart';
 import '../widgets/profile_menu_item.dart';
+import '../../../auth/presentation/pages/start_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -35,7 +36,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           _buildHeader(),
@@ -165,7 +166,7 @@ class _ProfilePageState extends State<ProfilePage> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -218,10 +219,10 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SizedBox(
         width: double.infinity,
-        height: 50,
+        height:
+            54, // Tăng nhẹ lên 54 cho đồng bộ chiều cao với bộ nút của StartPage
         child: ElevatedButton(
           onPressed: () {
-            // TODO: Implement logout - redirect to login page (will be implemented later)
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
@@ -234,18 +235,25 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   TextButton(
                     onPressed: () {
+                      // 1. Tắt hộp thoại Alert Dialog
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Logout - Login page will be implemented later',
-                          ),
+
+                      // 2. ĐIỀU HƯỚNG BẢO MẬT: Xóa sạch toàn bộ Stack và quay về StartPage đầu tiên
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StartPage(),
                         ),
+                        (route) =>
+                            false, // Ép không cho người dùng bấm Back để quay lại màn hình Profile nữa
                       );
                     },
                     child: const Text(
                       'Log out',
-                      style: TextStyle(color: Colors.red),
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -253,16 +261,29 @@ class _ProfilePageState extends State<ProfilePage> {
             );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryBlue,
-            foregroundColor: Colors.white,
+            // Custom lại UI: Nút Đăng xuất dùng nền xám/đỏ nhạt, chữ đỏ để phân biệt với các nút hành động chính
+            backgroundColor: Colors.grey.shade100,
+            foregroundColor: Colors.redAccent,
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                27,
+              ), // Bo tròn đối xứng hoàn hảo dạng Capsule giống StartPage
             ),
           ),
-          child: const Text(
-            'Log out',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                size: 20,
+              ), // Thêm cái icon logout nhìn cho sinh động chuyên nghiệp
+              SizedBox(width: 8),
+              Text(
+                'Log out',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
         ),
       ),

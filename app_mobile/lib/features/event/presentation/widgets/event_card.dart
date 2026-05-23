@@ -20,101 +20,181 @@ class EventCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(
+          12,
+        ), // Tạo khoảng cách thở bên trong thẻ trắng
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white, // ĐÚNG YÊU CẦU: Màu nền card trắng tinh khôi
+          borderRadius: BorderRadius.circular(20), // Bo góc mềm mại
           boxShadow: [
+            // ĐÚNG YÊU CẦU: Hiệu ứng đổ bóng mờ nhẹ, sâu và sang trọng
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              // Event image
-              SizedBox(
-                height: 160,
-                width: double.infinity,
-                child: Image.network(
-                  event.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.orange.shade300,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.event, size: 48, color: Colors.white),
-                          const SizedBox(height: 8),
-                          Text(
-                            event.title,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ================= 1. KHỐI ẢNH SỰ KIỆN (BÊN TRÁI) =================
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: SizedBox(
+                    width: 110,
+                    height: 110,
+                    child: Image.network(
+                      event.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Color(0xff1B15FF), Color(0xff100D98)],
                             ),
                           ),
-                        ],
+                          child: const Center(
+                            child: Icon(
+                              Icons.event,
+                              size: 36,
+                              color: Colors.white,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                // Badge giảm giá/khuyến mãi (Nằm đè nhẹ lên góc trên ảnh)
+                if (event.discount != null || event.discountedPrice != null)
+                  Positioned(
+                    left: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                    );
-                  },
-                ),
-              ),
-              // Book now button overlay
-              Positioned(
-                right: 12,
-                bottom: 12,
-                child: ElevatedButton(
-                  onPressed: onBookNow,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AppColors.primaryBlue,
-                    elevation: 2,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    'Book now',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-              // Discount badge (if available)
-              if (event.discount != null || event.discountedPrice != null)
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      event.discountText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        event.discountText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
+              ],
+            ),
+            const SizedBox(width: 14),
+
+            // ================= 2. KHỐI THÔNG TIN CHỮ & NÚT BẤM (BÊN PHẢI) =================
+            Expanded(
+              child: SizedBox(
+                height:
+                    110, // Đồng bộ chiều cao bằng khít với khối ảnh bên trái
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween, // Đẩy nút xuống đáy card
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Tên/Tiêu đề sự kiện (Giới hạn tối đa 1 dòng để tránh vỡ khung)
+                        Text(
+                          event.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Mô tả ngắn sự kiện (Giới hạn 2 dòng mờ, tạo chiều sâu giao diện)
+                        Text(
+                          event.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Hàng chứa Giá tiền và nút Book Now nằm dưới đáy Card
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Hiển thị giá (Nếu có giá ưu đãi)
+                        if (event.originalPrice != null &&
+                            event.discountedPrice != null)
+                          Text(
+                            '\$${event.discountedPrice!.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          )
+                        else
+                          const Text(
+                            'Free / Join',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+
+                        // NÚT BOOK NOW DẠNG CAPSULE GỌN GÀNG GÓC PHẢI
+                        SizedBox(
+                          height: 32,
+                          child: ElevatedButton(
+                            onPressed: onBookNow,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors
+                                  .primaryBlue, // Đổi sang màu xanh chủ đạo cho đồng bộ thương hiệu
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text(
+                              'Book now',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );

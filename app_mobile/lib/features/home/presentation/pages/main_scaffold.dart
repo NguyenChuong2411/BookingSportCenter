@@ -15,13 +15,23 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
 
-  // All pages that can be navigated to
-  final List<Widget> _pages = [
-    const HomePage(),
-    const MapPage(),
-    const EventPage(),
-    const ProfilePage(),
-  ];
+  // 🔴 Khai báo mảng chứa các trang cố định
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    // 🔴 KHỞI TẠO TRANG MỘT LẦN DUY NHẤT: Giữ chặt liên kết hàm callback không bị mất khi setState
+    _pages = [
+      HomePage(
+        onAvatarPressed: () =>
+            _onNavItemTapped(3), // Trỏ thẳng về tab Profile (Index = 3)
+      ),
+      const MapPage(),
+      const EventPage(),
+      const ProfilePage(),
+    ];
+  }
 
   void _onNavItemTapped(int index) {
     setState(() {
@@ -32,37 +42,55 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      // Sử dụng IndexedStack thay vì mảng trơn để giữ nguyên trạng thái cuộn của các trang khi đổi tab
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
+  // ================= TOÀN BỘ UI THANH ĐÁY GIỮ NGUYÊN 100% =================
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.backgroundWhite,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(35),
+          topRight: Radius.circular(35),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, -6),
           ),
         ],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(Icons.home, 0),
-              _buildNavItem(Icons.location_on_outlined, 1),
-              _buildNavItem(Icons.star_border, 2),
-              _buildNavItem(Icons.person_outline, 3),
+              _buildNavItem(
+                icon: Icons.home_rounded,
+                index: 0,
+                activeColor: const Color(0xFF00CC00),
+              ),
+              _buildNavItem(
+                icon: Icons.location_on_rounded,
+                index: 1,
+                activeColor: Colors.red,
+              ),
+              _buildNavItem(
+                icon: Icons.local_fire_department_rounded,
+                index: 2,
+                activeColor: Colors.red,
+              ),
+              _buildNavItem(
+                icon: Icons.person_rounded,
+                index: 3,
+                activeColor: Colors.grey.shade600,
+              ),
             ],
           ),
         ),
@@ -70,70 +98,32 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
+  Widget _buildNavItem({
+    required IconData icon,
+    required int index,
+    required Color activeColor,
+  }) {
     final isActive = _currentIndex == index;
     return GestureDetector(
       onTap: () => _onNavItemTapped(index),
-      child: Container(
-        padding: const EdgeInsets.all(12),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 230),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryGreen : Colors.transparent,
-          shape: BoxShape.circle,
+          color: isActive ? activeColor.withOpacity(0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Icon(
-          icon,
-          color: isActive ? AppColors.textWhite : AppColors.textSecondary,
-          size: 24,
-        ),
-      ),
-    );
-  }
-}
-
-// Placeholder page for unimplemented features
-class PlaceholderPage extends StatelessWidget {
-  final String title;
-
-  const PlaceholderPage({super.key, required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0000FF), Color(0xFF0000CC)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  title == 'Favorites' ? Icons.favorite : Icons.person,
-                  size: 80,
-                  color: AppColors.textWhite,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  '$title Page',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textWhite,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Coming Soon',
-                  style: TextStyle(fontSize: 16, color: AppColors.textWhite),
-                ),
-              ],
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isActive
+                  ? activeColor
+                  : AppColors.textSecondary.withOpacity(0.4),
+              size: 26,
             ),
-          ),
+          ],
         ),
       ),
     );

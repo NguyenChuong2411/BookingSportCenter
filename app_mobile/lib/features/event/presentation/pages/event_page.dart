@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../domain/entities/event.dart';
-import '../widgets/event_card.dart';
-import 'event_detail_page.dart';
+import 'package:booking_sport/core/constants/app_colors.dart';
+import 'package:booking_sport/features/event/domain/entities/event.dart';
+import 'package:booking_sport/features/event/presentation/widgets/event_card.dart';
+import 'package:booking_sport/features/event/presentation/pages/event_detail_page.dart';
+import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
 
 class EventPage extends StatefulWidget {
   const EventPage({super.key});
@@ -12,7 +13,6 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
-  // Mock event data - Replace with actual data from backend API
   late final List<Event> _events;
 
   @override
@@ -24,7 +24,7 @@ class _EventPageState extends State<EventPage> {
         title: 'Năm Mới Sân Mới - Hoạt Động Xuyên Tết',
         description:
             'Chào đón năm mới với sân bóng đá mới hoàn toàn. Nhiều ưu đãi hấp dẫn trong suốt dịp Tết Nguyên Đán.',
-        imageUrl: 'https://example.com/event1.jpg', // Will use placeholder
+        imageUrl: 'https://example.com/event1.jpg',
         courtId: 'court1',
         courtName: 'City Football Pitch',
         eventType: 'promotion',
@@ -104,15 +104,6 @@ class _EventPageState extends State<EventPage> {
           Expanded(child: _buildEventList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _handleAddEvent,
-        backgroundColor: AppColors.primaryBlue,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Add Event',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 
@@ -182,31 +173,10 @@ class _EventPageState extends State<EventPage> {
   }
 
   void _handleBookNow(Event event) {
-    // TODO: Implement booking flow
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking: ${event.title}'),
-        backgroundColor: AppColors.primaryBlue,
-      ),
-    );
-  }
-
-  void _handleAddEvent() {
-    // TODO: Navigate to add event page (admin only)
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Event'),
-        content: const Text(
-          'This feature is available for court owners and administrators only.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+    // CHUYỂN TRANG: Khi bấm Book now trên card sự kiện, lập tức bay sang trang chọn slot đặt sân
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SelectSlotsPage()),
     );
   }
 }
