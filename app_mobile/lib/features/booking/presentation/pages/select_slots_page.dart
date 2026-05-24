@@ -5,9 +5,12 @@ import '../bloc/booking_state.dart';
 import '../widgets/booking_header.dart';
 import '../widgets/booking_time_table.dart';
 import '../widgets/booking_bottom_bar.dart';
+import '../../../home/domain/entities/court.dart';
 
 class SelectSlotsPage extends StatelessWidget {
-  const SelectSlotsPage({super.key});
+  final Court? selectedCenter;
+
+  const SelectSlotsPage({super.key, this.selectedCenter});
 
   @override
   Widget build(BuildContext context) {

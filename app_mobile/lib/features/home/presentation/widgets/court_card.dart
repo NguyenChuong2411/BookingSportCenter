@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../domain/entities/court.dart';
+
 import '../../../../core/constants/app_colors.dart';
+import '../../domain/entities/court.dart';
 import 'rating_widget.dart';
 
 class CourtCard extends StatelessWidget {

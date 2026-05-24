@@ -3,7 +3,12 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../home/presentation/pages/main_scaffold.dart';
 import 'sign_up_page.dart';
 import 'start_page.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Thư viện xử lý đọc logo SVG độc quyền
+import 'package:flutter_svg/flutter_svg.dart'; // Thư viện xử lý đọc logo SVG
+import 'package:http/http.dart' as http; // Thư viện HTTP để gọi API
+import 'dart:convert'; // Thư viện để mã hóa/giải mã JSON
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
+import '../../../../core/utils/user_session.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,12 +19,13 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController(
-    text: "minhsang@uit.edu.vn",
+    text: "",
   );
   final TextEditingController _passwordController = TextEditingController(
-    text: "123456",
+    text: "",
   );
   bool _obscurePassword = true;
+  bool _isLoading = false; // Thêm biến để làm hiệu ứng xoay xoay khi chờ API
 
   @override
   void dispose() {
@@ -28,12 +34,91 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    // Luồng đi tắt: Bấm đăng nhập chuyển ngay vào bộ khung chính MainScaffold
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScaffold()),
-    );
+  // HÀM GỌI API ĐĂNG NHẬP ĐÃ ĐƯỢC ĐƯA VÀO TRONG CLASS
+  Future<void> _handleLogin() async {
+    // 1. Lấy dữ liệu từ textfield
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    // Thay đổi đường link API tự động tùy môi trường
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter the Email and Password!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true; // Bật hiệu ứng loading
+    });
+
+    final String apiUrl = kIsWeb
+        ? 'http://localhost:5236/api/Auth/login' // Nếu chạy trên Web Chrome
+        : 'http://10.0.2.2:5236/api/Auth/login'; // Nếu chạy trên máy ảo Android
+
+    try {
+      // 3. Gửi Request lên Backend .NET
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'email': email, 'password': password}),
+      );
+
+      // Đảm bảo widget vẫn còn tồn tại trên màn hình sau khi đợi API
+      if (!mounted) return;
+
+      // 4. Mổ xẻ kết quả server trả về
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print("=== ĐÃ NHẬN DATA TỪ BACKEND: ${response.body} ===");
+        UserSession.saveSession(responseData['user']);
+        // Hiện thông báo xanh lá
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🎉 ${responseData['message']}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Chuyển hướng sang màn hình Home (MainScaffold)
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScaffold()),
+        );
+      } else {
+        // Sai pass hoặc email (Lỗi 400/401)
+        final errorData = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${errorData['message']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      // Lỗi sập mạng hoặc quên bật Backend
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '⚠️ Không thể kết nối đến máy chủ. Vui lòng bật Server!',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Tắt loading dù thành công hay thất bại
+        });
+      }
+    }
   }
 
   @override
@@ -85,9 +170,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Container(
                     width: 105,
                     height: 105,
-                    padding: const EdgeInsets.all(
-                      12,
-                    ), // Tạo khoảng đệm cho logo SVG sắc nét
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(28),
@@ -122,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // 2. Ô NHẬP EMAIL ADDRESS
+                  // Ô NHẬP EMAIL ADDRESS
                   _buildInputFieldLabel("Email Address"),
                   _buildTextField(
                     controller: _emailController,
@@ -131,7 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. Ô NHẬP PASSWORD
+                  // Ô NHẬP PASSWORD
                   _buildInputFieldLabel("Password"),
                   _buildTextField(
                     controller: _passwordController,
@@ -162,12 +245,14 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // 4. BỘ NÚT ĐĂNG NHẬP (SIGN IN)
+                  // BỘ NÚT ĐĂNG NHẬP (SIGN IN)
                   SizedBox(
                     width: double.infinity,
                     height: 54,
                     child: ElevatedButton(
-                      onPressed: _handleLogin,
+                      onPressed: _isLoading
+                          ? null
+                          : _handleLogin, // Khóa nút khi đang load API
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0000FF),
                         foregroundColor: Colors.white,
@@ -176,13 +261,17 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         elevation: 3,
                       ),
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            ) // Hiển thị xoay xoay
+                          : const Text(
+                              "Sign In",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 24),

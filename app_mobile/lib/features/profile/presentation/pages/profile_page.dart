@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../domain/entities/user_profile.dart';
 import '../widgets/profile_menu_item.dart';
 import '../../../auth/presentation/pages/start_page.dart';
+import '../../../../core/utils/user_session.dart'; // 🔴 IMPORT KHO DỮ LIỆU
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -12,26 +12,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // Mock user data - Replace with actual user data from authentication
-  late final UserProfile _currentUser;
-
-  @override
-  void initState() {
-    super.initState();
-    // TODO: Get actual user from authentication service
-    _currentUser = UserProfile(
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      username: 'john.doe',
-      email: 'john.doe@example.com',
-      fullName: 'John Doe',
-      phoneNumber: '+1234567890',
-      avatarUrl: null, // No avatar URL - will show initials
-      role: 'Customer',
-      isActive: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 30)),
-      updatedAt: DateTime.now(),
-    );
-  }
+  // ĐÃ XÓA MOCK DATA VÀ INIT STATE VÌ GIỜ MÌNH DÙNG DỮ LIỆU THẬT TỪ USERSESSION
 
   @override
   Widget build(BuildContext context) {
@@ -91,8 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Transform.translate(
       offset: const Offset(0, -60),
       child: Padding(
-        // ← THÊM PADDING TẠI ĐÂY
-        padding: const EdgeInsets.only(top: 20), // Padding trái/phải
+        padding: const EdgeInsets.only(top: 20),
         child: Column(
           children: [
             // Avatar
@@ -112,21 +92,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
               child: ClipOval(
-                child: _currentUser.avatarUrl != null
-                    ? Image.network(
-                        _currentUser.avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildInitials();
-                        },
-                      )
-                    : _buildInitials(),
+                // Hiện tại chưa có link ảnh từ Backend nên mình dùng luôn Avatar chữ cái
+                child: _buildInitials(),
               ),
             ),
             const SizedBox(height: 16),
-            // Full name
+
+            // 🔴 LẤY TÊN THẬT TỪ HỆ THỐNG
             Text(
-              _currentUser.fullName,
+              UserSession.fullName ?? "Người dùng",
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -134,9 +108,10 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 4),
-            // Email
+
+            // 🔴 LẤY EMAIL THẬT TỪ HỆ THỐNG
             Text(
-              _currentUser.email,
+              UserSession.email ?? "Chưa cập nhật email",
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
@@ -145,16 +120,23 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // Hàm tạo Avatar chữ cái động
   Widget _buildInitials() {
+    // Lấy chữ cái đầu tiên của tên, nếu lỗi thì để chữ "U"
+    final String initial =
+        (UserSession.fullName != null && UserSession.fullName!.isNotEmpty)
+        ? UserSession.fullName![0].toUpperCase()
+        : "U";
+
     return Container(
-      color: AppColors.primaryBlue.withValues(alpha: 0.1),
+      color: const Color(0xFF0000FF).withValues(alpha: 0.1), // Nền xanh nhạt
       child: Center(
         child: Text(
-          _currentUser.initials,
+          initial,
           style: const TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
-            color: AppColors.primaryBlue,
+            color: Color(0xFF0000FF), // Chữ xanh đậm
           ),
         ),
       ),
@@ -181,7 +163,6 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.calendar_today,
             title: 'My Booking',
             onTap: () {
-              // TODO: Navigate to My Booking page
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('My Booking - Coming soon')),
               );
@@ -192,7 +173,6 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.person_outline,
             title: 'Edit profile',
             onTap: () {
-              // TODO: Navigate to Edit Profile page
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Edit Profile - Coming soon')),
               );
@@ -203,7 +183,6 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.settings_outlined,
             title: 'Setting',
             onTap: () {
-              // TODO: Navigate to Settings page
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Settings - Coming soon')),
               );
@@ -219,8 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SizedBox(
         width: double.infinity,
-        height:
-            54, // Tăng nhẹ lên 54 cho đồng bộ chiều cao với bộ nút của StartPage
+        height: 54,
         child: ElevatedButton(
           onPressed: () {
             showDialog(
@@ -238,14 +216,16 @@ class _ProfilePageState extends State<ProfilePage> {
                       // 1. Tắt hộp thoại Alert Dialog
                       Navigator.pop(context);
 
-                      // 2. ĐIỀU HƯỚNG BẢO MẬT: Xóa sạch toàn bộ Stack và quay về StartPage đầu tiên
+                      // 2. 🔴 XÓA SẠCH DỮ LIỆU PHIÊN ĐĂNG NHẬP
+                      UserSession.clearSession();
+
+                      // 3. ĐIỀU HƯỚNG BẢO MẬT: Xóa sạch toàn bộ Stack và quay về StartPage
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const StartPage(),
                         ),
-                        (route) =>
-                            false, // Ép không cho người dùng bấm Back để quay lại màn hình Profile nữa
+                        (route) => false,
                       );
                     },
                     child: const Text(
@@ -261,23 +241,17 @@ class _ProfilePageState extends State<ProfilePage> {
             );
           },
           style: ElevatedButton.styleFrom(
-            // Custom lại UI: Nút Đăng xuất dùng nền xám/đỏ nhạt, chữ đỏ để phân biệt với các nút hành động chính
             backgroundColor: Colors.grey.shade100,
             foregroundColor: Colors.redAccent,
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(
-                27,
-              ), // Bo tròn đối xứng hoàn hảo dạng Capsule giống StartPage
+              borderRadius: BorderRadius.circular(27),
             ),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.logout_rounded,
-                size: 20,
-              ), // Thêm cái icon logout nhìn cho sinh động chuyên nghiệp
+              Icon(Icons.logout_rounded, size: 20),
               SizedBox(width: 8),
               Text(
                 'Log out',
