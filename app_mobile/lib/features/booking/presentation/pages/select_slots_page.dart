@@ -9,8 +9,9 @@ import '../widgets/booking_bottom_bar.dart';
 class SelectSlotsPage extends StatefulWidget {
   // Optional: courtId có thể được truyền từ navigation
   final String? courtId;
+  final String? centerId;
 
-  const SelectSlotsPage({super.key, this.courtId});
+  const SelectSlotsPage({super.key, this.courtId, this.centerId});
 
   @override
   State<SelectSlotsPage> createState() => _SelectSlotsPageState();
@@ -25,7 +26,12 @@ class _SelectSlotsPageState extends State<SelectSlotsPage> {
     _bookingCubit = BookingCubit();
 
     // Load slots từ API nếu có courtId, nếu không dùng mock data
-    if (widget.courtId != null) {
+    if (widget.centerId != null) {
+      _bookingCubit.loadCenterBookingSlots(
+        centerId: widget.centerId!,
+        date: DateTime.now(),
+      );
+    } else if (widget.courtId != null) {
       _bookingCubit.loadBookingSlots(
         courtId: widget.courtId!,
         date: DateTime.now(),

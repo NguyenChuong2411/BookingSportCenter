@@ -69,25 +69,41 @@ namespace BookingSport.Services
             var availableSlots = new List<object>();
             var today = DateOnly.FromDateTime(DateTime.Now);
             var nowTime = DateTime.Now.TimeOfDay;
+            var slotLength = TimeSpan.FromMinutes(30);
 
             foreach (var pricing in pricings)
             {
                 if (pricing.StartTime < court.Center.OpenTime || pricing.EndTime > court.Center.CloseTime)
                     continue;
 
-                if (date == today && pricing.StartTime <= nowTime)
-                    continue;
-
-                var isAvailable = !bookings.Any(b =>
-                    b.StartTime < pricing.EndTime && b.EndTime > pricing.StartTime);
-
-                availableSlots.Add(new
+                var current = pricing.StartTime;
+                while (current < pricing.EndTime)
                 {
-                    startTime = pricing.StartTime,
-                    endTime = pricing.EndTime,
-                    pricePerHour = pricing.PricePerHour,
-                    isAvailable = isAvailable
-                });
+                    var slotStart = current;
+                    var slotEnd = current + slotLength;
+
+                    if (slotEnd > pricing.EndTime)
+                        break;
+
+                    if (date == today && slotStart <= nowTime)
+                    {
+                        current = slotEnd;
+                        continue;
+                    }
+
+                    var isAvailable = !bookings.Any(b =>
+                        b.StartTime < slotEnd && b.EndTime > slotStart);
+
+                    availableSlots.Add(new
+                    {
+                        startTime = slotStart,
+                        endTime = slotEnd,
+                        pricePerHour = pricing.PricePerHour,
+                        isAvailable = isAvailable
+                    });
+
+                    current = slotEnd;
+                }
             }
 
             return availableSlots;

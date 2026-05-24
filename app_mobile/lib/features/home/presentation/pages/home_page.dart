@@ -5,6 +5,7 @@ import '../../domain/entities/booking.dart';
 import '../../domain/entities/court.dart';
 import '../../domain/entities/user.dart';
 import '../../../../core/services/auth_api_service.dart';
+import '../../../../core/services/booking_api_service.dart';
 import '../../../profile/data/models/user_profile_model.dart';
 import '../widgets/booking_card.dart';
 import '../widgets/court_card.dart';
@@ -25,10 +26,14 @@ class _HomePageState extends State<HomePage> {
 
   User? _user;
   bool _isLoadingUser = true;
+  bool _isLoadingCourts = true;
+  String? _courtsErrorMessage;
+  List<Court> _availableCourts = [];
   @override
   void initState() {
     super.initState();
     _loadUser();
+    _loadAvailableCourts();
   }
 
   Future<void> _loadUser() async {
@@ -59,6 +64,31 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _loadAvailableCourts() async {
+    setState(() {
+      _isLoadingCourts = true;
+      _courtsErrorMessage = null;
+    });
+
+    try {
+      final data = await BookingApiService.getAvailableCenters();
+      final courts = data.map(_mapCenterToCourt).toList();
+      if (mounted) {
+        setState(() {
+          _availableCourts = courts;
+          _isLoadingCourts = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _courtsErrorMessage = e.toString();
+          _isLoadingCourts = false;
+        });
+      }
+    }
+  }
+
   final List<Booking> _bookings = [
     Booking(
       id: '1',
@@ -80,52 +110,22 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  final List<Court> _availableCourts = [
-    Court(
-      id: '1',
-      name: 'Thanh Phat Football Pitch',
-      location: 'Tan Phu',
-      address: '123 Luy Ban Bich, Tan Phu, HCMC',
-      rating: 4.0,
-      reviewCount: 120,
-      sportType: 'Football',
-      imageUrl: '',
-      availableDates: [],
-    ),
-    Court(
-      id: '2',
-      name: 'Thanh Phat Football Pitch',
-      location: 'Tan Phu',
-      address: '123 Luy Ban Bich, Tan Phu, HCMC',
-      rating: 4.0,
-      reviewCount: 120,
-      sportType: 'Football',
-      imageUrl: '',
-      availableDates: [],
-    ),
-    Court(
-      id: '3',
-      name: 'Thanh Phat Football Pitch',
-      location: 'Tan Phu',
-      address: '123 Luy Ban Bich, Tan Phu, HCMC',
-      rating: 4.0,
-      reviewCount: 120,
-      sportType: 'Football',
-      imageUrl: '',
-      availableDates: [],
-    ),
-    Court(
-      id: '4',
-      name: 'Thanh Phat Football Pitch',
-      location: 'Tan Phu',
-      address: '123 Luy Ban Bich, Tan Phu, HCMC',
-      rating: 4.0,
-      reviewCount: 120,
-      sportType: 'Football',
-      imageUrl: '',
-      availableDates: [],
-    ),
-  ];
+  Court _mapCenterToCourt(Map<String, dynamic> json) {
+    final ratingValue = json['rating'] as num? ?? 0;
+    final reviewCountValue = json['reviewCount'] as num? ?? 0;
+
+    return Court(
+      id: json['id'] as String,
+      name: (json['name'] ?? '') as String,
+      location: (json['location'] ?? '') as String,
+      address: (json['address'] ?? '') as String,
+      rating: ratingValue.toDouble(),
+      reviewCount: reviewCountValue.toInt(),
+      sportType: (json['sportType'] ?? 'Football') as String,
+      imageUrl: (json['imageUrl'] ?? '') as String,
+      availableDates: _generateDates(),
+    );
+  }
 
   List<DateTime> _generateDates() {
     final now = DateTime.now();
@@ -378,6 +378,46 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildAvailableCourtsList() {
+    if (_isLoadingCourts) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (_courtsErrorMessage != null) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            children: [
+              Text(
+                _courtsErrorMessage ?? 'Failed to load centers',
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _loadAvailableCourts,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_availableCourts.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Center(child: Text('No centers available')),
+        ),
+      );
+    }
+
     return SliverToBoxAdapter(
       child: Container(
         decoration: BoxDecoration(
@@ -397,7 +437,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SelectSlotsPage(),
+                    builder: (context) => SelectSlotsPage(centerId: court.id),
                   ),
                 );
               },
