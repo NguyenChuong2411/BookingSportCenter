@@ -51,5 +51,33 @@ namespace BookingSport.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [HttpGet("courts/{courtId}")]
+        public async Task<IActionResult> GetCourtById(Guid courtId)
+        {
+            try
+            {
+                var court = await _context.Courts
+                    .Include(c => c.Center)
+                    .FirstOrDefaultAsync(c => c.Id == courtId);
+
+                if (court == null)
+                    return NotFound(new { message = "Court not found" });
+
+                return Ok(new
+                {
+                    id = court.Id,
+                    name = court.Name,
+                    centerId = court.CenterId,
+                    centerName = court.Center?.Name,
+                    address = court.Center?.Address,
+                    isActive = court.IsActive
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }

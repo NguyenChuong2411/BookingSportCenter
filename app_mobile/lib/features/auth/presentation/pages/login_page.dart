@@ -62,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       BookingApiService.setJwtToken(token);
+      AuthApiService.setJwtToken(token);
 
       if (mounted) {
         Navigator.pushReplacement(

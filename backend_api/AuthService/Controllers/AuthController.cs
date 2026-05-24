@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModelClass.Authentication;
 using ModelClass.Connection;
 using AuthService.Services;
+using System.Security.Claims;
 
 namespace AuthService.Controllers
 {
@@ -48,6 +50,27 @@ namespace AuthService.Controllers
             public string FullName { get; set; } = null!;
             public string Email { get; set; } = null!;
             public string Role { get; set; } = null!;
+        }
+
+        public class UserProfileResponse
+        {
+            public Guid Id { get; set; }
+            public string Username { get; set; } = null!;
+            public string Email { get; set; } = null!;
+            public string FullName { get; set; } = null!;
+            public string? PhoneNumber { get; set; }
+            public string? AvatarUrl { get; set; }
+            public string Role { get; set; } = null!;
+            public bool IsActive { get; set; }
+            public DateTime CreatedAt { get; set; }
+            public DateTime UpdatedAt { get; set; }
+        }
+
+        public class UpdateProfileRequest
+        {
+            public string FullName { get; set; } = null!;
+            public string? PhoneNumber { get; set; }
+            public string? AvatarUrl { get; set; }
         }
 
         [HttpPost("register")]
@@ -117,6 +140,70 @@ namespace AuthService.Controllers
                     Email = user.Email,
                     Role = user.Role
                 }
+            });
+        }
+
+        [Authorize]
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                return Unauthorized(new { message = "User ID not found in token" });
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            return Ok(new UserProfileResponse
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                PhoneNumber = user.PhoneNumber,
+                AvatarUrl = user.AvatarUrl,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.CreatedAt
+            });
+        }
+
+        [Authorize]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.FullName))
+                return BadRequest(new { message = "Full name is required" });
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                return Unauthorized(new { message = "User ID not found in token" });
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+                return NotFound(new { message = "User not found" });
+
+            user.FullName = request.FullName.Trim();
+            user.PhoneNumber = request.PhoneNumber;
+            user.AvatarUrl = request.AvatarUrl;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new UserProfileResponse
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                FullName = user.FullName,
+                PhoneNumber = user.PhoneNumber,
+                AvatarUrl = user.AvatarUrl,
+                Role = user.Role,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = DateTime.UtcNow
             });
         }
     }
