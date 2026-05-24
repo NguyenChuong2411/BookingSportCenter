@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModelClass.Connection;
@@ -6,6 +7,7 @@ namespace BookingSport.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CenterController : ControllerBase
     {
         private readonly BookingDbContext _context;
@@ -33,11 +35,11 @@ namespace BookingSport.Controllers
                         rating = c.AverageRating,
                         reviewCount = 120, // Tạm fix cứng số lượt đánh giá
                         sportType = "Football",
-                        
+
                         imageUrl = c.CenterImages.FirstOrDefault(i => i.IsThumbnail) != null
                                    ? c.CenterImages.FirstOrDefault(i => i.IsThumbnail)!.ImageUrl
                                    : "",
-                                   
+
                         courtCount = c.Courts.Count
                     })
                     .ToListAsync();

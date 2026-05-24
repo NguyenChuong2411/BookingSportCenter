@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ModelClass.Authentication;
 using ModelClass.Connection;
+using AuthService.Services;
 
 namespace AuthService.Controllers
 {
@@ -10,13 +11,16 @@ namespace AuthService.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AuthDbContext _context;
+        private readonly IJwtTokenService _jwtTokenService;
 
-        public AuthController(AuthDbContext context)
+        public AuthController(AuthDbContext context, IJwtTokenService jwtTokenService)
         {
             _context = context;
+            _jwtTokenService = jwtTokenService;
         }
 
-        public class RegisterRequest { 
+        public class RegisterRequest
+        {
             public string Username { get; set; } = null!;
             public string FullName { get; set; } = null!;
             public string Email { get; set; } = null!;
@@ -24,19 +28,36 @@ namespace AuthService.Controllers
             public string Password { get; set; } = null!;
         }
 
-        public class LoginRequest { 
+        public class LoginRequest
+        {
             public string Email { get; set; } = null!;
             public string Password { get; set; } = null!;
+        }
+
+        public class AuthResponse
+        {
+            public string Message { get; set; } = null!;
+            public string? Token { get; set; }
+            public UserDto? User { get; set; }
+        }
+
+        public class UserDto
+        {
+            public Guid Id { get; set; }
+            public string Username { get; set; } = null!;
+            public string FullName { get; set; } = null!;
+            public string Email { get; set; } = null!;
+            public string Role { get; set; } = null!;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
-                return BadRequest(new { message = "Email is already used!" });
+                return BadRequest(new AuthResponse { Message = "Email is already used!" });
 
             if (await _context.Users.AnyAsync(u => u.Username == request.Username))
-                return BadRequest(new { message = "Username is already taken!" });
+                return BadRequest(new AuthResponse { Message = "Username is already taken!" });
 
             var user = new User
             {
@@ -54,7 +75,21 @@ namespace AuthService.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Register successfully!" });
+            var token = _jwtTokenService.GenerateToken(user);
+
+            return Ok(new AuthResponse
+            {
+                Message = "Register successfully!",
+                Token = token,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    Role = user.Role
+                }
+            });
         }
 
         [HttpPost("login")]
@@ -63,19 +98,24 @@ namespace AuthService.Controllers
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                return Unauthorized(new { message = "Email or password is incorrect!" });
+                return Unauthorized(new AuthResponse { Message = "Email or password is incorrect!" });
 
             if (!user.IsActive)
-                return Unauthorized(new { message = "Your account has been banned!" });
+                return Unauthorized(new AuthResponse { Message = "Your account has been banned!" });
 
-            return Ok(new { 
-                message = "Login successfully!",
-                user = new { 
-                    user.Id, 
-                    user.Username, 
-                    user.FullName, 
-                    user.Email,
-                    user.Role
+            var token = _jwtTokenService.GenerateToken(user);
+
+            return Ok(new AuthResponse
+            {
+                Message = "Login successfully!",
+                Token = token,
+                User = new UserDto
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    FullName = user.FullName,
+                    Email = user.Email,
+                    Role = user.Role
                 }
             });
         }

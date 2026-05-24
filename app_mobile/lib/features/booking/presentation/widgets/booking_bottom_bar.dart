@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:booking_sport/core/services/booking_api_service.dart';
+import '../bloc/booking_cubit.dart';
 import '../bloc/booking_state.dart';
 import '../pages/reservation_details_page.dart';
 
@@ -104,17 +107,116 @@ class BookingBottomBar extends StatelessWidget {
                               width: 130,
                               height: 44,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  // CHUYỂN TRANG TRỰC TIẾP: Nhấn một cái là bay sang trang tóm tắt liền
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ReservationDetailsPage(
-                                            bookedSlots: state.selectedSlots,
+                                onPressed: () async {
+                                  final selectedSlots = state.selectedSlots;
+                                  if (selectedSlots.isEmpty) {
+                                    return;
+                                  }
+
+                                  final courtId = selectedSlots.first.courtId;
+
+                                  final sortedSlots = List.of(selectedSlots)
+                                    ..sort(
+                                      (a, b) => _timeLabelToMinutes(a.timeLabel)
+                                          .compareTo(
+                                            _timeLabelToMinutes(b.timeLabel),
                                           ),
-                                    ),
+                                    );
+
+                                  final startTime = _parseTimeLabel(
+                                    sortedSlots.first.timeLabel,
                                   );
+
+                                  final totalMinutes =
+                                      selectedSlots.length * 30;
+                                  final endTime = _addMinutes(
+                                    startTime,
+                                    totalMinutes,
+                                  );
+
+                                  final bookingDate = state.selectedDate;
+
+                                  try {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Creating booking..."),
+                                      ),
+                                    );
+
+                                    final bookingResponse =
+                                        await BookingApiService.createBooking(
+                                          courtId: courtId,
+                                          bookingDate: bookingDate,
+                                          startTime: startTime,
+                                          endTime: endTime,
+                                        );
+
+                                    final bookingId = bookingResponse['id']
+                                        ?.toString();
+                                    if (bookingId == null ||
+                                        bookingId.isEmpty) {
+                                      throw Exception(
+                                        "Booking ID not returned from server",
+                                      );
+                                    }
+
+                                    final totalPriceValue =
+                                        bookingResponse['totalPrice'];
+                                    final depositValue =
+                                        bookingResponse['depositAmount'];
+                                    final courtPrice = totalPriceValue is num
+                                        ? totalPriceValue.toDouble()
+                                        : null;
+                                    final depositAmount = depositValue is num
+                                        ? depositValue.toDouble()
+                                        : null;
+
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).clearSnackBars();
+                                      final completed =
+                                          await Navigator.push<bool>(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ReservationDetailsPage(
+                                                    bookingId: bookingId,
+                                                    bookedSlots: selectedSlots,
+                                                    bookingDate: bookingDate,
+                                                    startTime: startTime,
+                                                    endTime: endTime,
+                                                    courtPrice: courtPrice,
+                                                    depositAmount:
+                                                        depositAmount,
+                                                  ),
+                                            ),
+                                          );
+
+                                      if (completed == true) {
+                                        await context
+                                            .read<BookingCubit>()
+                                            .loadBookingSlots(
+                                              courtId: courtId,
+                                              date: bookingDate,
+                                            );
+                                      }
+                                    }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).clearSnackBars();
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text("Error: $e"),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
@@ -144,5 +246,22 @@ class BookingBottomBar extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  TimeOfDay _parseTimeLabel(String timeLabel) {
+    final parts = timeLabel.split(':');
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  }
+
+  int _timeLabelToMinutes(String timeLabel) {
+    final parts = timeLabel.split(':');
+    return (int.parse(parts[0]) * 60) + int.parse(parts[1]);
+  }
+
+  TimeOfDay _addMinutes(TimeOfDay time, int minutesToAdd) {
+    final totalMinutes = (time.hour * 60) + time.minute + minutesToAdd;
+    final endHour = totalMinutes ~/ 60;
+    final endMinute = totalMinutes % 60;
+    return TimeOfDay(hour: endHour, minute: endMinute);
   }
 }
