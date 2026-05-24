@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/auth_api_service.dart';
 import 'login_page.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Thư viện đọc logo SVG
 
@@ -16,6 +17,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,17 +28,66 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  void _handleSignUp() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('🎉 Account created successfully! Please sign in.'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
+  Future<void> _handleSignUp() async {
+    if (_isLoading) {
+      return;
+    }
+
+    final fullName = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phoneNumber = _phoneController.text.trim();
+    final password = _passwordController.text;
+
+    if (fullName.isEmpty ||
+        email.isEmpty ||
+        phoneNumber.isEmpty ||
+        password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    final username = email.split('@').first;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await AuthApiService.register(
+        username: username,
+        fullName: fullName,
+        email: email,
+        phoneNumber: phoneNumber,
+        password: password,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully! Please sign in.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Sign up failed: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -182,13 +233,22 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         elevation: 3,
                       ),
-                      child: const Text(
-                        "Sign Up",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              "Sign Up",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
 

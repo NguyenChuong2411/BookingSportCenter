@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/auth_api_service.dart';
+import '../../../../core/services/booking_api_service.dart';
 import '../../../home/presentation/pages/main_scaffold.dart';
 import 'sign_up_page.dart';
 import 'start_page.dart';
@@ -20,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
     text: "123456",
   );
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,12 +31,57 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    // Luồng đi tắt: Bấm đăng nhập chuyển ngay vào bộ khung chính MainScaffold
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const MainScaffold()),
-    );
+  Future<void> _handleLogin() async {
+    if (_isLoading) {
+      return;
+    }
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email and password are required")),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await AuthApiService.login(
+        email: email,
+        password: password,
+      );
+
+      final token = response['token']?.toString();
+      if (token == null || token.isEmpty) {
+        throw Exception("Token not returned from server");
+      }
+
+      BookingApiService.setJwtToken(token);
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScaffold()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Login failed: $e")));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -176,13 +224,22 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         elevation: 3,
                       ),
-                      child: const Text(
-                        "Sign In",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              "Sign In",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 24),

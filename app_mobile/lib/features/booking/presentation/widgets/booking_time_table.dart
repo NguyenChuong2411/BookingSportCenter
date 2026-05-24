@@ -12,7 +12,10 @@ class BookingTimeTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeLabels = state.slots.map((s) => s.timeLabel).toSet().toList();
-    final courts = state.slots.map((s) => s.courtName).toSet().toList();
+    final courts = state.slots
+        .map((s) => s.courtName ?? s.courtId)
+        .toSet()
+        .toList();
 
     return Container(
       color: Colors.white,
@@ -60,7 +63,7 @@ class BookingTimeTable extends StatelessWidget {
                   itemBuilder: (context, courtIdx) {
                     final courtName = courts[courtIdx];
                     final courtSlots = state.slots
-                        .where((s) => s.courtName == courtName)
+                        .where((s) => (s.courtName ?? s.courtId) == courtName)
                         .toList();
 
                     return Container(
