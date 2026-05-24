@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ModelClass.Booking
+namespace ModelClass.BookingService
 {
     [Table("centers", Schema = "booking")]
     public class Center
@@ -46,5 +46,9 @@ namespace ModelClass.Booking
 
         // Relationship (1 Center có nhiều Court)
         public ICollection<Court> Courts { get; set; } = new List<Court>();
+
+        
+        // 🔴 THÊM ĐÚNG 1 DÒNG NÀY ĐỂ EF CORE BIẾT ĐƯỜNG LẤY ẢNH:
+        public ICollection<CenterImage> CenterImages { get; set; } = new List<CenterImage>();
     }
 }

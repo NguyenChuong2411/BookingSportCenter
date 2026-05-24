@@ -1,5 +1,5 @@
-﻿using ModelClass.Booking;
-using BookingEntity = ModelClass.Booking.Booking;
+﻿using ModelClass.BookingService;
+using BookingEntity = ModelClass.BookingService.Booking;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -18,8 +18,9 @@ namespace ModelClass.Connection
         public DbSet<Court> Courts { get; set; }
         public DbSet<BookingEntity> Bookings { get; set; }
         public DbSet<Sport> Sports { get; set; }
-        // ... các bảng Pricing, Review, Image
-
+        public DbSet<CenterImage> CenterImages { get; set; }
+        public DbSet<CourtPricing> CourtPricings { get; set; }
+        public DbSet<Review> Reviews { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

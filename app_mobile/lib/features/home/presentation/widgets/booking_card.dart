@@ -13,21 +13,27 @@ class BookingCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(right: 16),
+        margin: const EdgeInsets.only(
+          right: 16,
+          bottom: 25, // thêm để shadow không bị cắt
+        ),
         width: 200,
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(35),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 20, // tăng số này để đẩy xuống
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -36,6 +42,7 @@ class BookingCard extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
+
                     decoration: const BoxDecoration(
                       color: AppColors.primaryGreen,
                       shape: BoxShape.circle,
@@ -56,12 +63,16 @@ class BookingCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${booking.date.day} ${_getMonthName(booking.date.month)} ${_getOrdinalSuffix(booking.date.day)}, ${booking.time}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textSecondary,
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                ), // 8 (width của chấm) + 8 (SizedBox)
+                child: Text(
+                  '${booking.date.day} ${_getMonthName(booking.date.month)} ${_getOrdinalSuffix(booking.date.day)}, ${booking.time}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],

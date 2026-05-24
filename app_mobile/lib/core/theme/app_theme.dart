@@ -6,7 +6,37 @@ class AppTheme {
     return ThemeData(
       primaryColor: AppColors.primaryBlue,
       scaffoldBackgroundColor: AppColors.backgroundWhite,
-      fontFamily: 'SF Pro Display',
+      fontFamily: 'OpenSans', // Font mặc định cho toàn bộ app
+
+      textTheme: const TextTheme(
+        // 1. Tiêu đề cần nhấn mạnh (ExtraBold)
+        headlineLarge: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w800, // Tương ứng OpenSans-ExtraBold
+          color: AppColors.textPrimary,
+        ),
+
+        // 2. Tiêu đề thông thường (Bold)
+        headlineMedium: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700, // Tương ứng OpenSans-Bold
+          color: AppColors.textPrimary,
+        ),
+
+        // 3. Nội dung bình thường (Regular)
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400, // Tương ứng OpenSans-Regular
+          color: AppColors.textPrimary,
+        ),
+
+        // 4. Các con số (Dùng font Oughter)
+        displayLarge: TextStyle(
+          fontFamily: 'Oughter',
+          fontSize: 24,
+          color: AppColors.primaryBlue,
+        ),
+      ),
 
       colorScheme: const ColorScheme.light(
         primary: AppColors.primaryBlue,
@@ -47,22 +77,6 @@ class AppTheme {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
-      ),
-
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textWhite,
-        ),
-        headlineMedium: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
-        ),
-        bodyLarge: TextStyle(fontSize: 16, color: AppColors.textPrimary),
-        bodyMedium: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-        labelSmall: TextStyle(fontSize: 11, color: AppColors.textSecondary),
       ),
     );
   }
