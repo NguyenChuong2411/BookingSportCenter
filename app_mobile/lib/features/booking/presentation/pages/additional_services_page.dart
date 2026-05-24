@@ -1,5 +1,21 @@
 import 'package:flutter/material.dart';
 
+class ServiceItem {
+  final String id;
+  final String title;
+  final double price;
+  final String category;
+  final Widget imageChild;
+
+  ServiceItem({
+    required this.id,
+    required this.title,
+    required this.price,
+    required this.category,
+    required this.imageChild,
+  });
+}
+
 class AdditionalServicesPage extends StatefulWidget {
   const AdditionalServicesPage({super.key});
 
@@ -8,11 +24,70 @@ class AdditionalServicesPage extends StatefulWidget {
 }
 
 class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
-  // Giả lập lưu số lượng sản phẩm được chọn (Dùng Map với ID hoặc Tên sản phẩm)
-  final Map<String, int> _cartQuantities = {
-    "Aquafina 500ml": 1,
-    "Dasani 500ml": 1, // Đổi tên sản phẩm thứ 2 cho khác biệt
-  };
+  // Lưu số lượng sản phẩm được chọn (không hardcode ban đầu)
+  final Map<String, int> _cartQuantities = {};
+
+  // Tìm kiếm + filter
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedCategory = 'All';
+
+  // Danh sách dịch vụ (data-driven)
+  late final List<ServiceItem> _allServices = [
+    ServiceItem(
+      id: "Yonex Super Grap Spool",
+      title: "Yonex Super Grap Spool",
+      price: 13.59,
+      category: "Grip Tape",
+      imageChild: const Icon(
+        Icons.album_outlined,
+        size: 40,
+        color: Colors.orange,
+      ),
+    ),
+    ServiceItem(
+      id: "Aquafina 500ml",
+      title: "Aquafina 500ml",
+      price: 2.00,
+      category: "Bottled Water",
+      imageChild: const Icon(
+        Icons.local_drink_outlined,
+        size: 40,
+        color: Colors.blue,
+      ),
+    ),
+    ServiceItem(
+      id: "Dasani 500ml",
+      title: "Dasani 500ml",
+      price: 2.00,
+      category: "Bottled Water",
+      imageChild: const Icon(
+        Icons.water_drop_outlined,
+        size: 40,
+        color: Colors.cyan,
+      ),
+    ),
+    ServiceItem(
+      id: "Pocari 500ml",
+      title: "Pocari 500ml",
+      price: 5.99,
+      category: "Sports Drink",
+      imageChild: const Icon(Icons.bolt, size: 40, color: Colors.blueAccent),
+    ),
+    ServiceItem(
+      id: "Revive zero calo 500ml",
+      title: "Revive zero calo 500ml",
+      price: 5.99,
+      category: "Sports Drink",
+      imageChild: const Icon(Icons.reorder, size: 40, color: Colors.green),
+    ),
+    ServiceItem(
+      id: "ECCO Black socks",
+      title: "ECCO Black socks",
+      price: 5.99,
+      category: "Socks",
+      imageChild: const Icon(Icons.layers, size: 40, color: Colors.black87),
+    ),
+  ];
 
   // Hàm xử lý tăng giảm số lượng nước/phụ kiện
   void _updateQuantity(String productName, int change) {
@@ -25,6 +100,12 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
         _cartQuantities[productName] = newValue;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -105,82 +186,65 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
                       // 3. DANH SÁCH TAG LỌC NHANH (CATEGORY CHIPS)
                       _buildCategoryChips(),
                       const SizedBox(height: 20),
+                      // 4+. Danh sách dịch vụ động theo filter và search
+                      Builder(
+                        builder: (context) {
+                          final query = _searchController.text
+                              .trim()
+                              .toLowerCase();
+                          final categories = [
+                            'All',
+                            ...{for (var s in _allServices) s.category},
+                          ];
 
-                      // 4. NHÓM SẢN PHẨM: GRIP TAPE
-                      _buildSectionTitle("Grip Tape"),
-                      _buildServiceCard(
-                        id: "Yonex Super Grap Spool",
-                        title: "Yonex Super Grap Spool",
-                        priceText: "\$13.59 / pack",
-                        imageChild: const Icon(
-                          Icons.album_outlined,
-                          size: 40,
-                          color: Colors.orange,
-                        ), // Giả lập ảnh cuộn quấn cán
-                      ),
-                      const SizedBox(height: 16),
+                          final List<Widget> blocks = [];
+                          for (final cat in categories) {
+                            // Lọc theo category hiện tại hoặc theo selection
+                            final items = _allServices.where((s) {
+                              final matchesCategory =
+                                  (_selectedCategory == 'All' ||
+                                          s.category == _selectedCategory) &&
+                                      (_selectedCategory == 'All'
+                                          ? true
+                                          : s.category == _selectedCategory) ||
+                                  (_selectedCategory == 'All' && cat == 'All');
+                              final matchesCatLoop = cat == 'All'
+                                  ? true
+                                  : s.category == cat;
+                              final matchesSearch =
+                                  query.isEmpty ||
+                                  s.title.toLowerCase().contains(query);
+                              return matchesCatLoop &&
+                                  matchesSearch &&
+                                  (_selectedCategory == 'All'
+                                      ? true
+                                      : s.category == _selectedCategory);
+                            }).toList();
 
-                      // 5. NHÓM SẢN PHẨM: BOTTLED WATER
-                      _buildSectionTitle("Bottled Water"),
-                      _buildServiceCard(
-                        id: "Aquafina 500ml",
-                        title: "Aquafina 500ml",
-                        priceText: "\$2.00 / bottle",
-                        imageChild: const Icon(
-                          Icons.local_drink_outlined,
-                          size: 40,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildServiceCard(
-                        id: "Dasani 500ml",
-                        title: "Dasani 500ml",
-                        priceText: "\$2.00 / bottle",
-                        imageChild: const Icon(
-                          Icons.water_drop_outlined,
-                          size: 40,
-                          color: Colors.cyan,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                            if (items.isEmpty) continue;
+                            blocks.add(_buildSectionTitle(cat));
+                            for (final item in items) {
+                              blocks.add(
+                                _buildServiceCard(
+                                  id: item.id,
+                                  title: item.title,
+                                  priceText:
+                                      '\$${item.price.toStringAsFixed(2)}',
+                                  imageChild: item.imageChild,
+                                ),
+                              );
+                              blocks.add(const SizedBox(height: 12));
+                            }
+                            blocks.add(const SizedBox(height: 8));
+                          }
 
-                      // 6. NHÓM SẢN PHẨM: SPORTS DRINK
-                      _buildSectionTitle("Sports Drink"),
-                      _buildServiceCard(
-                        id: "Pocari 500ml",
-                        title: "Pocari 500ml",
-                        priceText: "\$5.99 / bottle",
-                        imageChild: const Icon(
-                          Icons.bolt,
-                          size: 40,
-                          color: Colors.blueAccent,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildServiceCard(
-                        id: "Revive zero calo 500ml",
-                        title: "Revive zero calo 500ml",
-                        priceText: "\$5.99 / bottle",
-                        imageChild: const Icon(
-                          Icons.reorder,
-                          size: 40,
-                          color: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 7. NHÓM SẢN PHẨM: SOCKS
-                      _buildSectionTitle("Socks"),
-                      _buildServiceCard(
-                        id: "ECCO Black socks",
-                        title: "ECCO Black socks",
-                        priceText: "\$5.99 / pair",
-                        imageChild: const Icon(
-                          Icons.layers,
-                          size: 40,
-                          color: Colors.black87,
-                        ),
+                          if (blocks.isEmpty)
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: Center(child: Text('No services found')),
+                            );
+                          return Column(children: blocks);
+                        },
                       ),
                     ],
                   ),
@@ -229,19 +293,13 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
                     int totalItems = 0;
                     double totalServicePrice = 0.0;
 
-                    // Bảng giá để tính toán nhanh hiển thị
-                    final Map<String, double> prices = {
-                      "Yonex Super Grap Spool": 13.59,
-                      "Aquafina 500ml": 2.00,
-                      "Dasani 500ml": 2.00,
-                      "Pocari 500ml": 5.99,
-                      "Revive zero calo 500ml": 5.99,
-                      "ECCO Black socks": 5.99,
+                    // Tính tổng dựa trên _allServices
+                    final priceLookup = {
+                      for (var s in _allServices) s.id: s.price,
                     };
-
                     _cartQuantities.forEach((id, qty) {
                       totalItems += qty;
-                      totalServicePrice += (prices[id] ?? 0.0) * qty;
+                      totalServicePrice += (priceLookup[id] ?? 0.0) * qty;
                     });
 
                     return Column(
@@ -291,46 +349,55 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
           ),
         ],
       ),
-      child: const TextField(
-        decoration: InputDecoration(
+      child: TextField(
+        controller: _searchController,
+        decoration: const InputDecoration(
           hintText: "Find the services",
           hintStyle: TextStyle(color: Colors.black26, fontSize: 14),
           contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           border: InputBorder.none,
           suffixIcon: Icon(Icons.search, color: Color(0xff1B15FF), size: 22),
         ),
+        onChanged: (_) => setState(() {}),
       ),
     );
   }
 
   // Danh sách bọc hàng ngang các từ khóa danh mục
   Widget _buildCategoryChips() {
-    final categories = ["Grip Tape", "Bottled Water", "Sports Drink", "Socks"];
+    final categories = [
+      'All',
+      ...{for (var s in _allServices) s.category},
+    ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: categories.map((cat) {
-          return Container(
-            margin: const EdgeInsets.only(right: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+          final selected = _selectedCategory == cat;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = cat),
+            child: Container(
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xff2A25FF) : Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                cat,
+                style: TextStyle(
+                  color: selected ? Colors.white : Colors.black87,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
-            child: Text(
-              cat,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
               ),
             ),
           );

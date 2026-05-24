@@ -108,7 +108,8 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
     int totalMinutes = widget.bookedSlots.length * 30;
     int hours = totalMinutes ~/ 60;
     int minutes = totalMinutes % 60;
-    String durationText = "${hours}h${minutes.toString().padLeft(2, '0')}";
+    String durationText =
+        "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}";
 
     // Bóc tách tên sân động từ danh sách dữ liệu truyền sang (Mặc định phòng hờ là Court 3)
     String courtName = widget.bookedSlots.isNotEmpty
@@ -251,7 +252,7 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
                               _buildSubDetailItem("Total time", durationText),
                               _buildSubDetailItem(
                                 "Price",
-                                "\$${currentPitchPrice.toStringAsFixed(2)}",
+                                _formatVnd(currentPitchPrice),
                                 isPrice: true,
                               ),
                             ],
@@ -290,7 +291,7 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
                                     ),
                                   ),
                                   Text(
-                                    "\$${itemTotal.toStringAsFixed(2)}",
+                                    _formatVnd(itemTotal),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -393,7 +394,7 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
                           ),
                           child: Text(
                             // Hiển thị báo giá tổng (sân + dịch vụ)
-                            "Confirm \$${finalTotal.toStringAsFixed(2)}",
+                            "Confirm ${_formatVnd(finalTotal)}",
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -550,6 +551,14 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return "$hour:$minute";
+  }
+
+  String _formatVnd(double value) {
+    final rounded = value.round();
+    final str = rounded.toString();
+    final reg = RegExp(r'\B(?=(\d{3})+(?!\d))');
+    final formatted = str.replaceAllMapped(reg, (match) => '.');
+    return '$formatted ₫';
   }
 
   Widget _buildTextField({

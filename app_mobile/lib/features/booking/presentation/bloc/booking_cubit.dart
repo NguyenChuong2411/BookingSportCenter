@@ -19,51 +19,94 @@ class BookingCubit extends Cubit<BookingState> {
     try {
       _selectedCourtId = courtId;
 
+      final courtDetails = await BookingApiService.getCourtDetails(courtId);
+      final courtName = courtDetails['name'] as String?;
+      final courtType = courtDetails['courtType'] as String?;
+      final sportName = courtDetails['sportName'] as String?;
+
       // Gọi API để lấy available slots
       final slotsData = await BookingApiService.getAvailableSlots(
         courtId,
         date,
       );
 
-      // Convert API response to TimeSlot objects
-      List<TimeSlot> slots = [];
-      for (var slotData in slotsData) {
-        final startTime = TimeOfDay(
-          hour: int.parse(slotData['startTime'].toString().split(':')[0]),
-          minute: int.parse(slotData['startTime'].toString().split(':')[1]),
-        );
-
-        final timeLabel =
-            '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
-
-        final startDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          startTime.hour,
-          startTime.minute,
-        );
-
-        final pricePerHour =
-            (slotData['pricePerHour'] as num?)?.toDouble() ?? 0.0;
-
-        slots.add(
-          TimeSlot(
-            courtId: courtId,
-            courtName: slotData['courtName']?.toString(),
-            timeLabel: timeLabel,
-            startTime: startDateTime,
-            pricePerHour: pricePerHour,
-            status: slotData['isAvailable']
-                ? SlotStatus.available
-                : SlotStatus.reserved,
-          ),
-        );
-      }
+      final slots = slotsData
+          .expand(
+            (slotData) => _expandSlotsFromApi(
+              courtId: courtId,
+              courtName: courtName ?? slotData['courtName']?.toString(),
+              courtType: courtType,
+              sportName: sportName,
+              date: date,
+              slotData: slotData,
+            ),
+          )
+          .toList();
 
       emit(
         BookingLoaded(
           slots: slots,
+          selectedSlots: const [],
+          selectedDate: date,
+        ),
+      );
+    } catch (e) {
+      emit(BookingError("Lỗi tải danh sách khung giờ: $e"));
+    }
+  }
+
+  /// Tải danh sách khung giờ cho tất cả sân trong 1 center
+  Future<void> loadCenterBookingSlots({
+    required String centerId,
+    required DateTime date,
+  }) async {
+    emit(BookingLoading());
+    try {
+      _selectedCenterId = centerId;
+
+      final courtsData = await BookingApiService.getCenterCourts(centerId);
+      if (courtsData.isEmpty) {
+        emit(
+          BookingLoaded(
+            slots: const [],
+            selectedSlots: const [],
+            selectedDate: date,
+          ),
+        );
+        return;
+      }
+
+      final slotGroups = await Future.wait(
+        courtsData.map((court) async {
+          final courtId = court['id'] as String;
+          final courtName = court['name'] as String?;
+          final courtType = court['courtType'] as String?;
+          final sportName = court['sportName'] as String?;
+          final slotsData = await BookingApiService.getAvailableSlots(
+            courtId,
+            date,
+          );
+
+          return slotsData
+              .expand(
+                (slotData) => _expandSlotsFromApi(
+                  courtId: courtId,
+                  courtName: courtName,
+                  courtType: courtType,
+                  sportName: sportName,
+                  date: date,
+                  slotData: slotData,
+                ),
+              )
+              .toList();
+        }),
+      );
+
+      final allSlots = slotGroups.expand((slots) => slots).toList();
+
+      emit(
+        BookingLoaded(
+          slots: allSlots,
           selectedSlots: const [],
           selectedDate: date,
         ),
@@ -150,6 +193,85 @@ class BookingCubit extends Cubit<BookingState> {
     } catch (e) {
       emit(const BookingError("Không thể tải thông tin lịch sân"));
     }
+  }
+
+  List<TimeSlot> _expandSlotsFromApi({
+    required String courtId,
+    required String? courtName,
+    required String? courtType,
+    required String? sportName,
+    required DateTime date,
+    required Map<String, dynamic> slotData,
+  }) {
+    final startParts = slotData['startTime'].toString().split(':');
+    final endParts = slotData['endTime'].toString().split(':');
+    final startHour = int.parse(startParts[0]);
+    final startMinute = int.parse(startParts[1]);
+    final endHour = int.parse(endParts[0]);
+    final endMinute = int.parse(endParts[1]);
+
+    final startDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      startHour,
+      startMinute,
+    );
+    final endDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      endHour,
+      endMinute,
+    );
+
+    final pricePerHour = (slotData['pricePerHour'] as num?)?.toDouble() ?? 0.0;
+    final status = slotData['isAvailable']
+        ? SlotStatus.available
+        : SlotStatus.reserved;
+
+    const slotMinutes = 30;
+    final durationMinutes = endDateTime.difference(startDateTime).inMinutes;
+    final slots = <TimeSlot>[];
+
+    if (durationMinutes <= slotMinutes) {
+      final timeLabel =
+          '${startDateTime.hour.toString().padLeft(2, '0')}:${startDateTime.minute.toString().padLeft(2, '0')}';
+      slots.add(
+        TimeSlot(
+          courtId: courtId,
+          courtName: courtName,
+          courtType: courtType,
+          sportName: sportName,
+          timeLabel: timeLabel,
+          startTime: startDateTime,
+          pricePerHour: pricePerHour,
+          status: status,
+        ),
+      );
+      return slots;
+    }
+
+    var current = startDateTime;
+    while (current.isBefore(endDateTime)) {
+      final timeLabel =
+          '${current.hour.toString().padLeft(2, '0')}:${current.minute.toString().padLeft(2, '0')}';
+      slots.add(
+        TimeSlot(
+          courtId: courtId,
+          courtName: courtName,
+          courtType: courtType,
+          sportName: sportName,
+          timeLabel: timeLabel,
+          startTime: current,
+          pricePerHour: pricePerHour,
+          status: status,
+        ),
+      );
+      current = current.add(const Duration(minutes: slotMinutes));
+    }
+
+    return slots;
   }
 
   String _normalizeTimeLabel(String value) {

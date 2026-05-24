@@ -92,7 +92,8 @@ namespace AuthService.Controllers
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = "Customer",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             _context.Users.Add(user);
@@ -166,7 +167,7 @@ namespace AuthService.Controllers
                 Role = user.Role,
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
-                UpdatedAt = user.CreatedAt
+                UpdatedAt = user.UpdatedAt
             });
         }
 
@@ -188,6 +189,7 @@ namespace AuthService.Controllers
             user.FullName = request.FullName.Trim();
             user.PhoneNumber = request.PhoneNumber;
             user.AvatarUrl = request.AvatarUrl;
+            user.UpdatedAt = DateTime.UtcNow;
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
@@ -203,7 +205,7 @@ namespace AuthService.Controllers
                 Role = user.Role,
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
-                UpdatedAt = DateTime.UtcNow
+                UpdatedAt = user.UpdatedAt
             });
         }
     }

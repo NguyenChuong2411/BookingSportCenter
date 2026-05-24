@@ -37,6 +37,24 @@ class CourtCard extends StatelessWidget {
                 color: AppColors.backgroundGray,
                 borderRadius: BorderRadius.circular(60),
               ),
+              clipBehavior: Clip.hardEdge,
+              child: court.imageUrl.isNotEmpty
+                  ? Image.network(
+                      court.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.image_not_supported,
+                          color: AppColors.textSecondary,
+                          size: 24,
+                        );
+                      },
+                    )
+                  : const Icon(
+                      Icons.image_not_supported,
+                      color: AppColors.textSecondary,
+                      size: 24,
+                    ),
             ),
 
             const SizedBox(width: 16),
