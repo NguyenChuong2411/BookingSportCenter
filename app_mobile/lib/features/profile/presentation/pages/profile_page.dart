@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/auth_api_service.dart';
+import '../../data/models/user_profile_model.dart';
 import '../../domain/entities/user_profile.dart';
 import '../widgets/profile_menu_item.dart';
+import 'edit_profile_page.dart';
+import 'my_booking_page.dart';
 import '../../../auth/presentation/pages/start_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -12,25 +16,39 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // Mock user data - Replace with actual user data from authentication
-  late final UserProfile _currentUser;
+  UserProfile? _currentUser;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // TODO: Get actual user from authentication service
-    _currentUser = UserProfile(
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      username: 'john.doe',
-      email: 'john.doe@example.com',
-      fullName: 'John Doe',
-      phoneNumber: '+1234567890',
-      avatarUrl: null, // No avatar URL - will show initials
-      role: 'Customer',
-      isActive: true,
-      createdAt: DateTime.now().subtract(const Duration(days: 30)),
-      updatedAt: DateTime.now(),
-    );
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final data = await AuthApiService.getProfile();
+      final profile = UserProfileModel.fromJson(data);
+      if (mounted) {
+        setState(() {
+          _currentUser = profile;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -41,19 +59,23 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           _buildHeader(),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 60),
-                  _buildUserInfo(),
-                  const SizedBox(height: 32),
-                  _buildMenuItems(),
-                  const SizedBox(height: 32),
-                  _buildLogoutButton(),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                ? _buildErrorState()
+                : SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 60),
+                        _buildUserInfo(),
+                        const SizedBox(height: 32),
+                        _buildMenuItems(),
+                        const SizedBox(height: 32),
+                        _buildLogoutButton(),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
@@ -112,9 +134,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
               child: ClipOval(
-                child: _currentUser.avatarUrl != null
+                child: _currentUser?.avatarUrl != null
                     ? Image.network(
-                        _currentUser.avatarUrl!,
+                        _currentUser!.avatarUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return _buildInitials();
@@ -126,7 +148,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 16),
             // Full name
             Text(
-              _currentUser.fullName,
+              _currentUser?.fullName ?? '',
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -136,7 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 4),
             // Email
             Text(
-              _currentUser.email,
+              _currentUser?.email ?? '',
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
@@ -150,12 +172,32 @@ class _ProfilePageState extends State<ProfilePage> {
       color: AppColors.primaryBlue.withValues(alpha: 0.1),
       child: Center(
         child: Text(
-          _currentUser.initials,
+          _currentUser?.initials ?? '?',
           style: const TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
             color: AppColors.primaryBlue,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage ?? 'Failed to load profile',
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadProfile, child: const Text('Retry')),
+          ],
         ),
       ),
     );
@@ -181,9 +223,9 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.calendar_today,
             title: 'My Booking',
             onTap: () {
-              // TODO: Navigate to My Booking page
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('My Booking - Coming soon')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyBookingPage()),
               );
             },
           ),
@@ -191,22 +233,16 @@ class _ProfilePageState extends State<ProfilePage> {
           ProfileMenuItem(
             icon: Icons.person_outline,
             title: 'Edit profile',
-            onTap: () {
-              // TODO: Navigate to Edit Profile page
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edit Profile - Coming soon')),
+            onTap: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfilePage(profile: _currentUser),
+                ),
               );
-            },
-          ),
-          Divider(height: 1, color: Colors.grey[200]),
-          ProfileMenuItem(
-            icon: Icons.settings_outlined,
-            title: 'Setting',
-            onTap: () {
-              // TODO: Navigate to Settings page
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings - Coming soon')),
-              );
+              if (result == true) {
+                _loadProfile();
+              }
             },
           ),
         ],

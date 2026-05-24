@@ -19,17 +19,21 @@ class UserProfileModel extends UserProfile {
   /// Create UserProfileModel from backend JSON response
   /// Expected API endpoint: GET /api/users/{id} or GET /api/auth/profile
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    final createdAtValue = json['createdAt'] ?? json['created_at'];
+    final updatedAtValue =
+        json['updatedAt'] ?? json['updated_at'] ?? createdAtValue;
+
     return UserProfileModel(
       id: json['id'] as String,
       username: json['username'] as String,
       email: json['email'] as String,
-      fullName: json['full_name'] as String,
-      phoneNumber: json['phone_number'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      fullName: (json['fullName'] ?? json['full_name']) as String,
+      phoneNumber: (json['phoneNumber'] ?? json['phone_number']) as String?,
+      avatarUrl: (json['avatarUrl'] ?? json['avatar_url']) as String?,
       role: json['role'] as String? ?? 'Customer',
-      isActive: json['is_active'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      isActive: (json['isActive'] ?? json['is_active']) as bool? ?? true,
+      createdAt: DateTime.parse(createdAtValue as String),
+      updatedAt: DateTime.parse(updatedAtValue as String),
     );
   }
 

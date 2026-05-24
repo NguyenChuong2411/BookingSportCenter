@@ -89,6 +89,27 @@ class BookingApiService {
     }
   }
 
+  /// Lấy chi tiết sân theo courtId
+  static Future<Map<String, dynamic>> getCourtDetails(String courtId) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/center/courts/$courtId'),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to fetch court: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching court: $e');
+      rethrow;
+    }
+  }
+
   // ==================== BOOKINGS ====================
 
   /// Lấy danh sách khung giờ có sẵn

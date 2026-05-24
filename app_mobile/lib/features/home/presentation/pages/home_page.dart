@@ -4,11 +4,12 @@ import '../../../../core/constants/app_strings.dart';
 import '../../domain/entities/booking.dart';
 import '../../domain/entities/court.dart';
 import '../../domain/entities/user.dart';
+import '../../../../core/services/auth_api_service.dart';
+import '../../../profile/data/models/user_profile_model.dart';
 import '../widgets/booking_card.dart';
 import '../widgets/court_card.dart';
 import '../widgets/date_selector.dart';
 import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
-import '../../../profile/presentation/pages/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   final VoidCallback? onAvatarPressed;
@@ -22,11 +23,41 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   DateTime? _selectedDate;
 
-  final User _user = User(
-    id: '1',
-    name: 'Minh Sang',
-    email: 'minhsang@example.com',
-  );
+  User? _user;
+  bool _isLoadingUser = true;
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    setState(() {
+      _isLoadingUser = true;
+    });
+
+    try {
+      final data = await AuthApiService.getProfile();
+      final profile = UserProfileModel.fromJson(data);
+      if (mounted) {
+        setState(() {
+          _user = User(
+            id: profile.id,
+            name: profile.fullName,
+            email: profile.email,
+            profileImage: profile.avatarUrl,
+          );
+          _isLoadingUser = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingUser = false;
+        });
+      }
+    }
+  }
 
   final List<Booking> _bookings = [
     Booking(
@@ -159,6 +190,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeader() {
+    final displayName = _isLoadingUser
+        ? "Loading..."
+        : (_user?.name ?? "Guest");
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -219,7 +253,7 @@ class _HomePageState extends State<HomePage> {
               const SizedBox(height: 4),
 
               Text(
-                _user.name,
+                displayName,
                 style: const TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
