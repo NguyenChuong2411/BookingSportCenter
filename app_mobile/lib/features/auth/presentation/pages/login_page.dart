@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/auth_api_service.dart';
+import '../../../../core/services/booking_api_service.dart';
 import '../../../home/presentation/pages/main_scaffold.dart';
 import 'sign_up_page.dart';
 import 'start_page.dart';
@@ -25,7 +27,7 @@ class _LoginPageState extends State<LoginPage> {
     text: "",
   );
   bool _obscurePassword = true;
-  bool _isLoading = false; // Thêm biến để làm hiệu ứng xoay xoay khi chờ API
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -34,88 +36,55 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // HÀM GỌI API ĐĂNG NHẬP ĐÃ ĐƯỢC ĐƯA VÀO TRONG CLASS
   Future<void> _handleLogin() async {
-    // 1. Lấy dữ liệu từ textfield
+    if (_isLoading) {
+      return;
+    }
+
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    // Thay đổi đường link API tự động tùy môi trường
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter the Email and Password!'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text("Email and password are required")),
       );
       return;
     }
 
     setState(() {
-      _isLoading = true; // Bật hiệu ứng loading
+      _isLoading = true;
     });
 
-    final String apiUrl = kIsWeb
-        ? 'http://localhost:5236/api/Auth/login' // Nếu chạy trên Web Chrome
-        : 'http://10.0.2.2:5236/api/Auth/login'; // Nếu chạy trên máy ảo Android
-
     try {
-      // 3. Gửi Request lên Backend .NET
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'email': email, 'password': password}),
+      final response = await AuthApiService.login(
+        email: email,
+        password: password,
       );
 
-      // Đảm bảo widget vẫn còn tồn tại trên màn hình sau khi đợi API
-      if (!mounted) return;
+      final token = response['token']?.toString();
+      if (token == null || token.isEmpty) {
+        throw Exception("Token not returned from server");
+      }
 
-      // 4. Mổ xẻ kết quả server trả về
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        print("=== ĐÃ NHẬN DATA TỪ BACKEND: ${response.body} ===");
-        UserSession.saveSession(responseData['user']);
-        // Hiện thông báo xanh lá
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('🎉 ${responseData['message']}'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      BookingApiService.setJwtToken(token);
+      AuthApiService.setJwtToken(token);
 
-        // Chuyển hướng sang màn hình Home (MainScaffold)
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScaffold()),
         );
-      } else {
-        // Sai pass hoặc email (Lỗi 400/401)
-        final errorData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ Error: ${errorData['message']}'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     } catch (e) {
-      if (!mounted) return;
-      // Lỗi sập mạng hoặc quên bật Backend
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '⚠️ Không thể kết nối đến máy chủ. Vui lòng bật Server!',
-          ),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Login failed: $e")));
+      }
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false; // Tắt loading dù thành công hay thất bại
+          _isLoading = false;
         });
       }
     }
@@ -262,9 +231,14 @@ class _LoginPageState extends State<LoginPage> {
                         elevation: 3,
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                            ) // Hiển thị xoay xoay
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Text(
                               "Sign In",
                               style: TextStyle(

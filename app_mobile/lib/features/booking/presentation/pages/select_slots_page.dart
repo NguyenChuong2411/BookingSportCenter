@@ -7,15 +7,52 @@ import '../widgets/booking_time_table.dart';
 import '../widgets/booking_bottom_bar.dart';
 import '../../../home/domain/entities/court.dart';
 
-class SelectSlotsPage extends StatelessWidget {
-  final Court? selectedCenter;
+class SelectSlotsPage extends StatefulWidget {
+  // Optional: courtId có thể được truyền từ navigation
+  final String? courtId;
+  final String? centerId;
 
-  const SelectSlotsPage({super.key, this.selectedCenter});
+  const SelectSlotsPage({super.key, this.courtId, this.centerId});
+
+  @override
+  State<SelectSlotsPage> createState() => _SelectSlotsPageState();
+}
+
+class _SelectSlotsPageState extends State<SelectSlotsPage> {
+  late BookingCubit _bookingCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingCubit = BookingCubit();
+
+    // Load slots từ API nếu có courtId, nếu không dùng mock data
+    if (widget.centerId != null) {
+      _bookingCubit.loadCenterBookingSlots(
+        centerId: widget.centerId!,
+        date: DateTime.now(),
+      );
+    } else if (widget.courtId != null) {
+      _bookingCubit.loadBookingSlots(
+        courtId: widget.courtId!,
+        date: DateTime.now(),
+      );
+    } else {
+      // Fallback: Load mock data
+      _bookingCubit.loadMockBookingSlots();
+    }
+  }
+
+  @override
+  void dispose() {
+    _bookingCubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => BookingCubit()..loadBookingSlots(),
+      create: (context) => _bookingCubit,
       child: Scaffold(
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         body: BlocBuilder<BookingCubit, BookingState>(

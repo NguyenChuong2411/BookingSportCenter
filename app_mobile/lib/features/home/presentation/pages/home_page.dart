@@ -4,12 +4,13 @@ import '../../../../core/constants/app_strings.dart';
 import '../../domain/entities/booking.dart';
 import '../../domain/entities/court.dart';
 import '../../domain/entities/user.dart';
+import '../../../../core/services/auth_api_service.dart';
+import '../../../../core/services/booking_api_service.dart';
+import '../../../profile/data/models/user_profile_model.dart';
 import '../widgets/booking_card.dart';
 import '../widgets/court_card.dart';
 import '../widgets/date_selector.dart';
 import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
-import '../../../../core/utils/user_session.dart'; // Đã import UserSession
-import '../../data/datasources/center_service.dart';
 
 class HomePage extends StatefulWidget {
   final VoidCallback? onAvatarPressed;
@@ -23,12 +24,70 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   DateTime? _selectedDate;
 
-  // Cục mock data này ông có thể xóa đi cũng được, vì giờ mình xài UserSession rồi
-  final User _user = User(
-    id: '1',
-    name: 'Minh Sang',
-    email: 'minhsang@example.com',
-  );
+  User? _user;
+  bool _isLoadingUser = true;
+  bool _isLoadingCourts = true;
+  String? _courtsErrorMessage;
+  List<Court> _availableCourts = [];
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+    _loadAvailableCourts();
+  }
+
+  Future<void> _loadUser() async {
+    setState(() {
+      _isLoadingUser = true;
+    });
+
+    try {
+      final data = await AuthApiService.getProfile();
+      final profile = UserProfileModel.fromJson(data);
+      if (mounted) {
+        setState(() {
+          _user = User(
+            id: profile.id,
+            name: profile.fullName,
+            email: profile.email,
+            profileImage: profile.avatarUrl,
+          );
+          _isLoadingUser = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingUser = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadAvailableCourts() async {
+    setState(() {
+      _isLoadingCourts = true;
+      _courtsErrorMessage = null;
+    });
+
+    try {
+      final data = await BookingApiService.getAvailableCenters();
+      final courts = data.map(_mapCenterToCourt).toList();
+      if (mounted) {
+        setState(() {
+          _availableCourts = courts;
+          _isLoadingCourts = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _courtsErrorMessage = e.toString();
+          _isLoadingCourts = false;
+        });
+      }
+    }
+  }
 
   final List<Booking> _bookings = [
     Booking(
@@ -51,26 +110,21 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  List<Court> _availableCourts = [];
-  bool _isLoadingCourts = true; // Cờ hiệu để xoay vòng loading
-  final CenterService _centerService = CenterService();
+  Court _mapCenterToCourt(Map<String, dynamic> json) {
+    final ratingValue = json['rating'] as num? ?? 0;
+    final reviewCountValue = json['reviewCount'] as num? ?? 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadCourtsFromApi();
-  }
-
-  Future<void> _loadCourtsFromApi() async {
-    setState(() => _isLoadingCourts = true);
-
-    // Gọi xuống Backend C# lấy data
-    final courts = await _centerService.fetchAvailableCenters();
-
-    setState(() {
-      _availableCourts = courts;
-      _isLoadingCourts = false;
-    });
+    return Court(
+      id: json['id'] as String,
+      name: (json['name'] ?? '') as String,
+      location: (json['location'] ?? '') as String,
+      address: (json['address'] ?? '') as String,
+      rating: ratingValue.toDouble(),
+      reviewCount: reviewCountValue.toInt(),
+      sportType: (json['sportType'] ?? 'Football') as String,
+      imageUrl: (json['imageUrl'] ?? '') as String,
+      availableDates: _generateDates(),
+    );
   }
 
   List<DateTime> _generateDates() {
@@ -78,6 +132,7 @@ class _HomePageState extends State<HomePage> {
     return List.generate(14, (index) => now.add(Duration(days: index)));
   }
 
+  // Hàm bổ trợ đổi số tháng sang chữ tiếng Anh
   String _getMonthName(int month) {
     const months = [
       'January',
@@ -96,6 +151,7 @@ class _HomePageState extends State<HomePage> {
     return months[month - 1];
   }
 
+  // Hàm quét mảng 14 ngày để trả về chuỗi tên tháng (Xử lý được cả trường hợp giao giữa 2 tháng)
   String _getAvailableMonthsString() {
     final dates = _generateDates();
     if (dates.isEmpty) return '';
@@ -104,9 +160,9 @@ class _HomePageState extends State<HomePage> {
     final lastMonth = dates.last.month;
 
     if (firstMonth == lastMonth) {
-      return _getMonthName(firstMonth);
+      return _getMonthName(firstMonth); // Ví dụ: "May"
     } else {
-      return '${_getMonthName(firstMonth)} - ${_getMonthName(lastMonth)}';
+      return '${_getMonthName(firstMonth)} - ${_getMonthName(lastMonth)}'; // Ví dụ: "May - June"
     }
   }
 
@@ -116,11 +172,17 @@ class _HomePageState extends State<HomePage> {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(child: _buildHeader()),
+
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
           SliverToBoxAdapter(child: _buildYourBookingsSection()),
+
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
           _buildAvailableCourtsHeader(),
+
           _buildAvailableCourtsList(),
+
           const SliverFillRemaining(hasScrollBody: false, child: SizedBox()),
         ],
       ),
@@ -128,6 +190,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildHeader() {
+    final displayName = _isLoadingUser
+        ? "Loading..."
+        : (_user?.name ?? "Guest");
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -147,8 +212,10 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🔴 BỌC AVATAR BẰNG INKWELL ĐỂ TẠO HIỆU ỨNG GỢN SÓNG VÀ CHUYỂN TRANG
               InkWell(
                 onTap: () {
+                  // 🔴 KÍCH HOẠT HÀM ĐỔI TAB CỦA CHA TRUYỀN XUỐNG
                   if (widget.onAvatarPressed != null) {
                     widget.onAvatarPressed!();
                   }
@@ -168,19 +235,10 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ],
                   ),
-                  // 🔴 ĐÃ ĐỔI TỪ ICON SANG AVATAR CHỮ CÁI ĐỘNG
-                  child: Center(
-                    child: Text(
-                      UserSession.fullName != null &&
-                              UserSession.fullName!.isNotEmpty
-                          ? UserSession.fullName![0].toUpperCase()
-                          : "U", // Fallback chữ U (User) nếu chưa có data
-                      style: const TextStyle(
-                        color: Color(0xFF0000FF), // Màu xanh SpotOn
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 30,
                   ),
                 ),
               ),
@@ -194,9 +252,8 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 4),
 
-              // 🔴 ĐÃ ĐỔI TỪ MOCK DATA SANG DỮ LIỆU THẬT CỦA USER
               Text(
-                UserSession.fullName ?? "User",
+                displayName,
                 style: const TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
@@ -287,7 +344,10 @@ class _HomePageState extends State<HomePage> {
                   color: AppColors.textWhite,
                 ),
               ),
+
               const SizedBox(height: 8),
+
+              // 🔴 CẬP NHẬT: Thay chuỗi tĩnh bằng chuỗi động kết hợp tên tháng thời gian thực
               Text(
                 "${AppStrings.selectTheDaysAvailable} in ${_getAvailableMonthsString()}"
                     .toUpperCase(),
@@ -296,7 +356,9 @@ class _HomePageState extends State<HomePage> {
                   color: AppColors.textWhite,
                 ),
               ),
+
               const SizedBox(height: 16),
+
               DateSelector(
                 dates: _generateDates(),
                 selectedDate: _selectedDate,
@@ -306,6 +368,7 @@ class _HomePageState extends State<HomePage> {
                   });
                 },
               ),
+
               const SizedBox(height: 24),
             ],
           ),
@@ -315,6 +378,46 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildAvailableCourtsList() {
+    if (_isLoadingCourts) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    if (_courtsErrorMessage != null) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            children: [
+              Text(
+                _courtsErrorMessage ?? 'Failed to load centers',
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _loadAvailableCourts,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_availableCourts.isEmpty) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 16),
+          child: Center(child: Text('No centers available')),
+        ),
+      );
+    }
+
     return SliverToBoxAdapter(
       child: Container(
         decoration: BoxDecoration(
@@ -325,46 +428,22 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ),
-        padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
-        child: _isLoadingCourts
-            // 🔴 TRẠNG THÁI 1: ĐANG TẢI (Hiện vòng xoay)
-            ? const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: CircularProgressIndicator(color: AppColors.textWhite),
-                ),
-              )
-            // 🔴 TRẠNG THÁI 2: TẢI XONG (Kiểm tra xem có rỗng không)
-            : _availableCourts.isEmpty
-            ? const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Text(
-                    "No courts available at the moment.",
-                    style: TextStyle(color: AppColors.textWhite, fontSize: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: _availableCourts.map((court) {
+            return CourtCard(
+              court: court,
+              onBookNow: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SelectSlotsPage(centerId: court.id),
                   ),
-                ),
-              )
-            // 🔴 TRẠNG THÁI 3: CÓ DATA (Đổ list ra màn hình)
-            : Column(
-                children: _availableCourts.map((court) {
-                  return CourtCard(
-                    court: court,
-                    onBookNow: () {
-                      // Chuyền nguyên object 'court' sang trang chọn giờ
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SelectSlotsPage(
-                            selectedCenter:
-                                court, // Nhớ thêm thuộc tính này bên SelectSlotsPage nhé!
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }).toList(),
-              ),
+                );
+              },
+            );
+          }).toList(),
+        ),
       ),
     );
   }

@@ -9,18 +9,46 @@ class BookingTimeTable extends StatelessWidget {
 
   const BookingTimeTable({super.key, required this.state});
 
+  String _formatCourtLabel(TimeSlot slot) {
+    final name = slot.courtName ?? slot.courtId;
+    final type = slot.courtType;
+    final sport = slot.sportName;
+    final parts = <String>[name];
+    if (type != null && type.isNotEmpty) parts.add(type);
+    if (sport != null && sport.isNotEmpty) parts.add(sport);
+    return parts.join('\n');
+  }
+
+  List<String> _generateTimeLabels() {
+    final labels = <String>[];
+    var hour = 5;
+    var minute = 0;
+    while (hour < 23 || (hour == 23 && minute == 0)) {
+      labels.add(
+        '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}',
+      );
+      minute += 30;
+      if (minute >= 60) {
+        minute = 0;
+        hour += 1;
+      }
+    }
+    return labels;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final timeLabels = state.slots.map((s) => s.timeLabel).toSet().toList();
-    final courts = state.slots.map((s) => s.courtName).toSet().toList();
+    final timeLabels = _generateTimeLabels();
+    final courtIds = state.slots.map((s) => s.courtId).toSet().toList();
+    const columnWidth = 55.0;
+    final tableWidth = 120 + (timeLabels.length * columnWidth);
 
     return Container(
       color: Colors.white,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: SizedBox(
-          width:
-              650, // Đảm bảo đủ chiều rộng để trải đều các cột giờ mà không bị bug giao diện
+          width: tableWidth,
           child: Column(
             children: [
               // Hàng hiển thị Khung giờ tiêu đề phía trên
@@ -29,7 +57,7 @@ class BookingTimeTable extends StatelessWidget {
                 height: 40,
                 child: Row(
                   children: [
-                    const SizedBox(width: 90),
+                    const SizedBox(width: 120),
                     ...timeLabels.map(
                       (time) => Expanded(
                         child: Container(
@@ -56,15 +84,19 @@ class BookingTimeTable extends StatelessWidget {
               // Danh sách các sân chạy hàng dọc
               Expanded(
                 child: ListView.builder(
-                  itemCount: courts.length,
+                  itemCount: courtIds.length,
                   itemBuilder: (context, courtIdx) {
-                    final courtName = courts[courtIdx];
+                    final courtId = courtIds[courtIdx];
+                    final courtSlot = state.slots.firstWhere(
+                      (s) => s.courtId == courtId,
+                    );
+                    final courtLabel = _formatCourtLabel(courtSlot);
                     final courtSlots = state.slots
-                        .where((s) => s.courtName == courtName)
+                        .where((s) => s.courtId == courtId)
                         .toList();
 
                     return Container(
-                      height: 50,
+                      height: 64,
                       decoration: const BoxDecoration(
                         border: Border(
                           bottom: BorderSide(color: Colors.black12),
@@ -73,32 +105,81 @@ class BookingTimeTable extends StatelessWidget {
                       child: Row(
                         children: [
                           Container(
-                            width: 90,
+                            width: 120,
                             color: const Color(0xffdbffee),
                             alignment: Alignment.center,
-                            child: Text(
-                              courtName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  courtSlot.courtName ?? courtSlot.courtId,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                  maxLines: 1,
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if ((courtSlot.courtType ?? '').isNotEmpty)
+                                  Text(
+                                    courtSlot.courtType!,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                    ),
+                                    maxLines: 1,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                if ((courtSlot.sportName ?? '').isNotEmpty)
+                                  Text(
+                                    courtSlot.sportName!,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                      color: Colors.black.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                    ),
+                                    maxLines: 1,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
                             ),
                           ),
-                          ...courtSlots.map((slot) {
+                          ...timeLabels.map((timeLabel) {
+                            final slot = courtSlots
+                                .cast<TimeSlot?>()
+                                .firstWhere(
+                                  (s) => s?.timeLabel == timeLabel,
+                                  orElse: () => null,
+                                );
+                            final isMissing = slot == null;
+
                             Color cellColor = Colors.white;
-                            if (slot.status == SlotStatus.unavailable)
+                            if (isMissing) cellColor = Colors.grey;
+                            if (slot?.status == SlotStatus.unavailable)
                               cellColor = Colors.grey;
-                            if (slot.status == SlotStatus.reserved)
+                            if (slot?.status == SlotStatus.reserved)
                               cellColor = const Color(0xffC02F52);
-                            if (slot.status == SlotStatus.picked)
+                            if (slot?.status == SlotStatus.picked)
                               cellColor = const Color(0xFF00BA13);
 
                             return Expanded(
                               child: GestureDetector(
-                                onTap: () {
-                                  BlocProvider.of<BookingCubit>(
-                                    context,
-                                  ).toggleSelectSlot(slot);
-                                },
+                                onTap: isMissing
+                                    ? null
+                                    : () {
+                                        BlocProvider.of<BookingCubit>(
+                                          context,
+                                        ).toggleSelectSlot(slot!);
+                                      },
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: cellColor,

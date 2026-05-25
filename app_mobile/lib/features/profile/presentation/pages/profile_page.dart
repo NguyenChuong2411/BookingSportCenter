@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/auth_api_service.dart';
+import '../../data/models/user_profile_model.dart';
+import '../../domain/entities/user_profile.dart';
 import '../widgets/profile_menu_item.dart';
+import 'edit_profile_page.dart';
+import 'my_booking_page.dart';
 import '../../../auth/presentation/pages/start_page.dart';
 import '../../../../core/utils/user_session.dart'; // 🔴 IMPORT KHO DỮ LIỆU
 
@@ -12,7 +17,40 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // ĐÃ XÓA MOCK DATA VÀ INIT STATE VÌ GIỜ MÌNH DÙNG DỮ LIỆU THẬT TỪ USERSESSION
+  UserProfile? _currentUser;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final data = await AuthApiService.getProfile();
+      final profile = UserProfileModel.fromJson(data);
+      if (mounted) {
+        setState(() {
+          _currentUser = profile;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,19 +60,23 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           _buildHeader(),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 60),
-                  _buildUserInfo(),
-                  const SizedBox(height: 32),
-                  _buildMenuItems(),
-                  const SizedBox(height: 32),
-                  _buildLogoutButton(),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _errorMessage != null
+                ? _buildErrorState()
+                : SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 60),
+                        _buildUserInfo(),
+                        const SizedBox(height: 32),
+                        _buildMenuItems(),
+                        const SizedBox(height: 32),
+                        _buildLogoutButton(),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
@@ -92,15 +134,22 @@ class _ProfilePageState extends State<ProfilePage> {
                 ],
               ),
               child: ClipOval(
-                // Hiện tại chưa có link ảnh từ Backend nên mình dùng luôn Avatar chữ cái
-                child: _buildInitials(),
+                child: _currentUser?.avatarUrl != null
+                    ? Image.network(
+                        _currentUser!.avatarUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildInitials();
+                        },
+                      )
+                    : _buildInitials(),
               ),
             ),
             const SizedBox(height: 16),
 
             // 🔴 LẤY TÊN THẬT TỪ HỆ THỐNG
             Text(
-              UserSession.fullName ?? "Người dùng",
+              _currentUser?.fullName ?? '',
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -111,7 +160,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
             // 🔴 LẤY EMAIL THẬT TỪ HỆ THỐNG
             Text(
-              UserSession.email ?? "Chưa cập nhật email",
+              _currentUser?.email ?? '',
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
@@ -132,12 +181,32 @@ class _ProfilePageState extends State<ProfilePage> {
       color: const Color(0xFF0000FF).withValues(alpha: 0.1), // Nền xanh nhạt
       child: Center(
         child: Text(
-          initial,
+          _currentUser?.initials ?? '?',
           style: const TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0000FF), // Chữ xanh đậm
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _errorMessage ?? 'Failed to load profile',
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadProfile, child: const Text('Retry')),
+          ],
         ),
       ),
     );
@@ -163,8 +232,9 @@ class _ProfilePageState extends State<ProfilePage> {
             icon: Icons.calendar_today,
             title: 'My Booking',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('My Booking - Coming soon')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyBookingPage()),
               );
             },
           ),
@@ -172,20 +242,16 @@ class _ProfilePageState extends State<ProfilePage> {
           ProfileMenuItem(
             icon: Icons.person_outline,
             title: 'Edit profile',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Edit Profile - Coming soon')),
+            onTap: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfilePage(profile: _currentUser),
+                ),
               );
-            },
-          ),
-          Divider(height: 1, color: Colors.grey[200]),
-          ProfileMenuItem(
-            icon: Icons.settings_outlined,
-            title: 'Setting',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings - Coming soon')),
-              );
+              if (result == true) {
+                _loadProfile();
+              }
             },
           ),
         ],
