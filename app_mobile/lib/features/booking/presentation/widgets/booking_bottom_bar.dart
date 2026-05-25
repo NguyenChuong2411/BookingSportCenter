@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:booking_sport/core/services/booking_api_service.dart';
+import 'package:booking_sport/core/utils/formatters.dart';
 import '../bloc/booking_cubit.dart';
 import '../bloc/booking_state.dart';
 import '../pages/reservation_details_page.dart';
@@ -16,10 +17,10 @@ class BookingBottomBar extends StatelessWidget {
     final minutes = state.totalMinutes % 60;
     final durationText =
         "${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}";
-    final priceText = _formatVnd(state.totalPrice);
+    final priceText = formatVnd(state.totalPrice);
 
     return Container(
-      padding: const EdgeInsets.only(left: 50, right: 50, top: 25, bottom: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -34,64 +35,79 @@ class BookingBottomBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    const SizedBox(
-                      width: 85,
-                      child: Text(
-                        "Total time",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 85,
+                        child: Text(
+                          "Total time",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                       ),
-                    ),
-                    Text(
-                      durationText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            durationText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const SizedBox(
-                      width: 85,
-                      child: Text(
-                        "Price",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 85,
+                        child: Text(
+                          "Price",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                       ),
-                    ),
-                    Text(
-                      priceText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            priceText,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(width: 12),
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               height: state.selectedSlots.isNotEmpty ? 64 : 0,
+              width: state.selectedSlots.isNotEmpty ? 120 : 0,
               child: state.selectedSlots.isNotEmpty
                   ? Column(
                       children: [
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         SizedBox(
-                          width: 130,
-                          height: 44,
+                          width: 120,
+                          height: 40,
                           child: ElevatedButton(
                             onPressed: () async {
                               final selectedSlots = state.selectedSlots;
@@ -223,22 +239,6 @@ class BookingBottomBar extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatVnd(double value) {
-    final rounded = value.round();
-    final text = rounded.toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < text.length; i++) {
-      final position = text.length - i;
-      buffer.write(text[i]);
-      if (position > 1 && position % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '${buffer.toString()} ₫';
   }
 
   TimeOfDay _parseTimeLabel(String timeLabel) {

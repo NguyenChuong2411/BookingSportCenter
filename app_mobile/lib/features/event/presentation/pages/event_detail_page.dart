@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/entities/event.dart';
 import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
+import 'package:booking_sport/core/utils/formatters.dart';
 
 class EventDetailPage extends StatelessWidget {
   final Event event;
@@ -201,7 +202,7 @@ class EventDetailPage extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  '\$${event.originalPrice!.toStringAsFixed(0)}',
+                  formatVnd(event.originalPrice!),
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[500],
@@ -210,7 +211,7 @@ class EventDetailPage extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  '\$${event.discountedPrice!.toStringAsFixed(0)}',
+                  formatVnd(event.discountedPrice!),
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -251,7 +252,9 @@ class EventDetailPage extends StatelessWidget {
             // ĐIỀU HƯỚNG CHÍNH XÁC: Nhấn Book Now trong chi tiết event sẽ nhảy sang chọn slot sân bóng
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SelectSlotsPage()),
+              MaterialPageRoute(
+                builder: (context) => SelectSlotsPage(centerId: event.courtId),
+              ),
             );
           },
           style: ElevatedButton.styleFrom(

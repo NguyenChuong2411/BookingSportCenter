@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/booking_api_service.dart';
+import '../../../../core/utils/formatters.dart';
 
 class MyBookingPage extends StatefulWidget {
   const MyBookingPage({super.key});
@@ -174,7 +175,7 @@ class _MyBookingPageState extends State<MyBookingPage> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Total: ${booking.totalPrice.toStringAsFixed(0)}',
+            'Total: ${formatVnd(booking.totalPrice)}',
             style: const TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,

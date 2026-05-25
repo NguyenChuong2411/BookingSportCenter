@@ -199,26 +199,19 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
 
                           final List<Widget> blocks = [];
                           for (final cat in categories) {
-                            // Lọc theo category hiện tại hoặc theo selection
                             final items = _allServices.where((s) {
-                              final matchesCategory =
-                                  (_selectedCategory == 'All' ||
-                                          s.category == _selectedCategory) &&
-                                      (_selectedCategory == 'All'
-                                          ? true
-                                          : s.category == _selectedCategory) ||
-                                  (_selectedCategory == 'All' && cat == 'All');
                               final matchesCatLoop = cat == 'All'
                                   ? true
                                   : s.category == cat;
                               final matchesSearch =
                                   query.isEmpty ||
                                   s.title.toLowerCase().contains(query);
+                              final matchesSelectedCategory =
+                                  _selectedCategory == 'All' ||
+                                  s.category == _selectedCategory;
                               return matchesCatLoop &&
                                   matchesSearch &&
-                                  (_selectedCategory == 'All'
-                                      ? true
-                                      : s.category == _selectedCategory);
+                                  matchesSelectedCategory;
                             }).toList();
 
                             if (items.isEmpty) continue;
@@ -238,11 +231,12 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
                             blocks.add(const SizedBox(height: 8));
                           }
 
-                          if (blocks.isEmpty)
+                          if (blocks.isEmpty) {
                             return const Padding(
                               padding: EdgeInsets.symmetric(vertical: 20),
                               child: Center(child: Text('No services found')),
                             );
+                          }
                           return Column(children: blocks);
                         },
                       ),
@@ -260,7 +254,7 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
             left: 20,
             right: 20,
             child: Container(
-              height: 60,
+              height: 64,
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
@@ -303,6 +297,7 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
                     });
 
                     return Column(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
@@ -315,11 +310,14 @@ class _AdditionalServicesPageState extends State<AdditionalServicesPage> {
                         ),
                         if (totalItems > 0) ...[
                           const SizedBox(height: 2),
-                          Text(
-                            "$totalItems items | Total: \$${totalServicePrice.toStringAsFixed(2)}",
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 11,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              "$totalItems items | Total: \$${totalServicePrice.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                              ),
                             ),
                           ),
                         ],

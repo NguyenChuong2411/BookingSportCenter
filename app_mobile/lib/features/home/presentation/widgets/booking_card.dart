@@ -15,7 +15,7 @@ class BookingCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(
           right: 16,
-          bottom: 25, // thêm để shadow không bị cắt
+          bottom: 12, // giảm để tránh vượt chiều cao list
         ),
         width: 200,
         decoration: BoxDecoration(
@@ -30,10 +30,7 @@ class BookingCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 20, // tăng số này để đẩy xuống
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
