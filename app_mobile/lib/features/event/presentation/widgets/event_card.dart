@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../domain/entities/event.dart';
+import '../../../../core/utils/formatters.dart';
 
 class EventCard extends StatelessWidget {
   final Event event;
@@ -145,7 +146,7 @@ class EventCard extends StatelessWidget {
                         if (event.originalPrice != null &&
                             event.discountedPrice != null)
                           Text(
-                            '\$${event.discountedPrice!.toStringAsFixed(0)}',
+                            formatVnd(event.discountedPrice!),
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,

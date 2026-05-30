@@ -73,6 +73,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = context =>
+    {
+        context.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+    }
+});
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();

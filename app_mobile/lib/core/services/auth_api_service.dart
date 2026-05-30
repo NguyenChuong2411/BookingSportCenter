@@ -5,6 +5,7 @@ import 'api_config.dart';
 
 class AuthApiService {
   static String? _jwtToken;
+  static const Duration _requestTimeout = Duration(seconds: 30);
 
   static void setJwtToken(String token) {
     _jwtToken = token;
@@ -25,14 +26,16 @@ class AuthApiService {
   }) async {
     try {
       final request = {'email': email, 'password': password};
+      final url = '${ApiConfig.authBaseUrl}/auth/login';
+      debugPrint('Auth login URL: $url');
 
       final response = await http
           .post(
-            Uri.parse('${ApiConfig.authBaseUrl}/auth/login'),
+            Uri.parse(url),
             headers: _getHeaders(),
             body: jsonEncode(request),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
@@ -68,7 +71,7 @@ class AuthApiService {
             headers: _getHeaders(),
             body: jsonEncode(request),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
@@ -89,7 +92,7 @@ class AuthApiService {
             Uri.parse('${ApiConfig.authBaseUrl}/auth/profile'),
             headers: _getHeaders(),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(jsonDecode(response.body));
@@ -121,7 +124,7 @@ class AuthApiService {
             headers: _getHeaders(),
             body: jsonEncode(request),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 200) {
         return Map<String, dynamic>.from(jsonDecode(response.body));

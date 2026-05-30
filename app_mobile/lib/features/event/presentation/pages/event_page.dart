@@ -25,7 +25,7 @@ class _EventPageState extends State<EventPage> {
         description:
             'Chào đón năm mới với sân bóng đá mới hoàn toàn. Nhiều ưu đãi hấp dẫn trong suốt dịp Tết Nguyên Đán.',
         imageUrl: 'https://example.com/event1.jpg',
-        courtId: 'court1',
+        courtId: 'c070964d-8b93-4fb2-b81b-1909da2837c0',
         courtName: 'City Football Pitch',
         eventType: 'promotion',
         startDate: DateTime(2026, 1, 20),
@@ -43,7 +43,7 @@ class _EventPageState extends State<EventPage> {
         description:
             'Giảm giá 60% cho tất cả các sân vào cuối tuần. Không giới hạn số lượng đặt sân. First come, first served!',
         imageUrl: 'https://example.com/event2.jpg',
-        courtId: 'court2',
+        courtId: 'f18adc55-94f3-4f9b-9708-acf3c05aec8a',
         courtName: 'Central Sports Complex',
         eventType: 'special_offer',
         startDate: DateTime(2026, 3, 1),
@@ -61,7 +61,7 @@ class _EventPageState extends State<EventPage> {
         description:
             'Tham gia giải đấu bóng đá mini với tổng giá trị giải thưởng lên đến 50 triệu đồng. Đăng ký ngay!',
         imageUrl: 'https://example.com/event3.jpg',
-        courtId: 'court3',
+        courtId: '5a9fe2d1-f681-4b97-b5f5-3f09adb1ee23',
         courtName: 'Thanh Phat Football Pitch',
         eventType: 'tournament',
         startDate: DateTime(2026, 4, 15),
@@ -79,7 +79,7 @@ class _EventPageState extends State<EventPage> {
         description:
             'Miễn phí 1 giờ thuê sân cho tất cả khách hàng mới đăng ký. Áp dụng cho tất cả các ngày trong tuần.',
         imageUrl: 'https://example.com/event4.jpg',
-        courtId: 'court1',
+        courtId: 'f18adc55-94f3-4f9b-9708-acf3c05aec8a',
         courtName: 'City Football Pitch',
         eventType: 'promotion',
         startDate: DateTime(2026, 3, 1),
@@ -176,7 +176,9 @@ class _EventPageState extends State<EventPage> {
     // CHUYỂN TRANG: Khi bấm Book now trên card sự kiện, lập tức bay sang trang chọn slot đặt sân
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SelectSlotsPage()),
+      MaterialPageRoute(
+        builder: (context) => SelectSlotsPage(centerId: event.courtId),
+      ),
     );
   }
 }

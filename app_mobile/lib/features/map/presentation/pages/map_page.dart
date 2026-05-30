@@ -6,6 +6,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../domain/entities/court_marker.dart';
 import '../widgets/map_pin_widget.dart';
 import '../widgets/sport_filter_chip.dart';
+import 'package:booking_sport/features/booking/presentation/pages/select_slots_page.dart';
+import 'package:booking_sport/core/utils/formatters.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -413,7 +415,7 @@ class _MapPageState extends State<MapPage> {
                 ),
                 const Spacer(),
                 Text(
-                  '${court.pricePerHour.toStringAsFixed(0)}đ/hour',
+                  '${formatVnd(court.pricePerHour)}/hour',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -519,13 +521,11 @@ class _MapPageState extends State<MapPage> {
                     onPressed: court.isAvailable
                         ? () {
                             Navigator.pop(context);
-                            // TODO: Navigate to booking page with court data
-                            // Example: Navigator.push(context, MaterialPageRoute(builder: (_) => BookingPage(court: court)))
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Booking ${court.courtName}... (Backend integration pending)',
-                                ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    SelectSlotsPage(centerId: court.id),
                               ),
                             );
                           }

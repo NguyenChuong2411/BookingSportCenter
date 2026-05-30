@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:booking_sport/features/booking/presentation/pages/additional_services_page.dart';
 import 'package:booking_sport/core/services/booking_api_service.dart';
+import 'package:booking_sport/core/services/auth_api_service.dart';
+import 'package:booking_sport/core/utils/formatters.dart';
 import '../../data/models/time_slot_model.dart';
 
 class ReservationDetailsPage extends StatefulWidget {
@@ -30,12 +32,8 @@ class ReservationDetailsPage extends StatefulWidget {
 class _ReservationDetailsPageState extends State<ReservationDetailsPage>
     with WidgetsBindingObserver {
   // Bộ điều khiển Form nhập liệu khách hàng
-  final TextEditingController _nameController = TextEditingController(
-    text: "Minh Sang Le",
-  );
-  final TextEditingController _phoneController = TextEditingController(
-    text: "0912345678",
-  );
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
   // Map lưu trữ danh sách dịch vụ mua kèm nhận từ trang Additional Services gửi về
@@ -57,6 +55,31 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final profile = await AuthApiService.getProfile();
+      final fullName = profile['fullName']?.toString();
+      final phone = profile['phoneNumber']?.toString();
+
+      if (!mounted) return;
+
+      if ((_nameController.text).trim().isEmpty &&
+          fullName != null &&
+          fullName.isNotEmpty) {
+        _nameController.text = fullName;
+      }
+
+      if ((_phoneController.text).trim().isEmpty &&
+          phone != null &&
+          phone.isNotEmpty) {
+        _phoneController.text = phone;
+      }
+    } catch (_) {
+      // Ignore profile errors and allow manual input.
+    }
   }
 
   @override
@@ -252,7 +275,7 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
                               _buildSubDetailItem("Total time", durationText),
                               _buildSubDetailItem(
                                 "Price",
-                                _formatVnd(currentPitchPrice),
+                                formatVnd(currentPitchPrice),
                                 isPrice: true,
                               ),
                             ],
@@ -291,7 +314,7 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
                                     ),
                                   ),
                                   Text(
-                                    _formatVnd(itemTotal),
+                                    formatVnd(itemTotal),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -394,7 +417,8 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
                           ),
                           child: Text(
                             // Hiển thị báo giá tổng (sân + dịch vụ)
-                            "Confirm ${_formatVnd(finalTotal)}",
+                            // "Confirm ${_formatVnd(finalTotal)}",
+                            "Confirm ${formatVnd(finalTotal)}",
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -551,14 +575,6 @@ class _ReservationDetailsPageState extends State<ReservationDetailsPage>
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return "$hour:$minute";
-  }
-
-  String _formatVnd(double value) {
-    final rounded = value.round();
-    final str = rounded.toString();
-    final reg = RegExp(r'\B(?=(\d{3})+(?!\d))');
-    final formatted = str.replaceAllMapped(reg, (match) => '.');
-    return '$formatted ₫';
   }
 
   Widget _buildTextField({
