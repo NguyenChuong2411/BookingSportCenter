@@ -7,6 +7,7 @@ import '../../domain/entities/user.dart';
 import '../../../../core/services/auth_api_service.dart';
 import '../../../../core/services/booking_api_service.dart';
 import '../../../profile/data/models/user_profile_model.dart';
+import '../../../profile/presentation/pages/my_booking_page.dart';
 import '../widgets/booking_card.dart';
 import '../widgets/court_card.dart';
 import '../widgets/date_selector.dart';
@@ -27,13 +28,17 @@ class _HomePageState extends State<HomePage> {
   User? _user;
   bool _isLoadingUser = true;
   bool _isLoadingCourts = true;
+  bool _isLoadingBookings = true;
   String? _courtsErrorMessage;
+  String? _bookingsErrorMessage;
   List<Court> _availableCourts = [];
+  List<Booking> _bookings = [];
   @override
   void initState() {
     super.initState();
     _loadUser();
     _loadAvailableCourts();
+    _loadBookings();
   }
 
   Future<void> _loadUser() async {
@@ -89,26 +94,72 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  final List<Booking> _bookings = [
-    Booking(
-      id: '1',
-      courtName: 'Fusing\nMeadows',
-      location: 'Location 1',
-      date: DateTime(2026, 10, 21),
-      time: '14:00 - 16:00',
-      rating: 4.5,
-      sportType: 'Football',
-    ),
-    Booking(
-      id: '2',
-      courtName: 'Gran\nSlam Grass',
-      location: 'Location 2',
-      date: DateTime(2026, 10, 21),
-      time: '14:00',
-      rating: 4.0,
-      sportType: 'Tennis',
-    ),
-  ];
+  Future<void> _loadBookings() async {
+    setState(() {
+      _isLoadingBookings = true;
+      _bookingsErrorMessage = null;
+    });
+
+    try {
+      final data = await BookingApiService.getMyBookings();
+      final bookingItems = data.map(_BookingItem.fromJson).toList();
+      final courtNames = await _loadCourtNames(bookingItems);
+
+      final bookings = bookingItems.map((item) {
+        final courtName = courtNames[item.courtId] ?? item.courtIdShort;
+        return Booking(
+          id: item.id,
+          courtName: courtName,
+          location: '',
+          date: item.bookingDate,
+          time: item.timeRange,
+          rating: 0,
+          sportType: '',
+        );
+      }).toList();
+
+      if (mounted) {
+        setState(() {
+          _bookings = bookings;
+          _isLoadingBookings = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _bookingsErrorMessage = e.toString();
+          _isLoadingBookings = false;
+        });
+      }
+    }
+  }
+
+  Future<Map<String, String>> _loadCourtNames(
+    List<_BookingItem> bookings,
+  ) async {
+    final uniqueCourtIds = bookings.map((b) => b.courtId).toSet();
+    if (uniqueCourtIds.isEmpty) return {};
+
+    final results = await Future.wait(
+      uniqueCourtIds.map((courtId) async {
+        try {
+          final data = await BookingApiService.getCourtDetails(courtId);
+          final name = data['name'] as String?;
+          return MapEntry(courtId, name);
+        } catch (_) {
+          return MapEntry(courtId, null);
+        }
+      }),
+    );
+
+    final names = <String, String>{};
+    for (final entry in results) {
+      if (entry.value != null && entry.value!.isNotEmpty) {
+        names[entry.key] = entry.value!;
+      }
+    }
+    return names;
+  }
 
   Court _mapCenterToCourt(Map<String, dynamic> json) {
     final ratingValue = json['rating'] as num? ?? 0;
@@ -285,7 +336,14 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MyBookingPage(),
+                    ),
+                  );
+                },
                 child: const Text(
                   AppStrings.seeAll,
                   style: TextStyle(
@@ -300,18 +358,39 @@ class _HomePageState extends State<HomePage> {
         ),
 
         const SizedBox(height: 16),
-
-        SizedBox(
-          height: 130,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            itemCount: _bookings.length,
-            itemBuilder: (context, index) {
-              return BookingCard(booking: _bookings[index], onTap: () {});
-            },
+        if (_isLoadingBookings)
+          const SizedBox(
+            height: 150,
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_bookingsErrorMessage != null)
+          SizedBox(
+            height: 150,
+            child: Center(
+              child: Text(
+                _bookingsErrorMessage ?? 'Failed to load bookings',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          )
+        else if (_bookings.isEmpty)
+          const SizedBox(
+            height: 150,
+            child: Center(child: Text('No bookings found')),
+          )
+        else
+          SizedBox(
+            height: 150,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              itemCount: _bookings.length,
+              itemBuilder: (context, index) {
+                return BookingCard(booking: _bookings[index], onTap: () {});
+              },
+            ),
           ),
-        ),
       ],
     );
   }
@@ -445,6 +524,53 @@ class _HomePageState extends State<HomePage> {
           }).toList(),
         ),
       ),
+    );
+  }
+}
+
+class _BookingItem {
+  final String id;
+  final String courtId;
+  final DateTime bookingDate;
+  final String startTime;
+  final String endTime;
+
+  _BookingItem({
+    required this.id,
+    required this.courtId,
+    required this.bookingDate,
+    required this.startTime,
+    required this.endTime,
+  });
+
+  String get courtIdShort {
+    if (courtId.length <= 8) return courtId;
+    return '${courtId.substring(0, 8)}...';
+  }
+
+  String get timeRange => '${_formatTime(startTime)} - ${_formatTime(endTime)}';
+
+  static String _formatTime(String value) {
+    final parts = value.split(':');
+    if (parts.length < 2) return value;
+    return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  }
+
+  factory _BookingItem.fromJson(Map<String, dynamic> json) {
+    final bookingDateValue = json['bookingDate']?.toString() ?? '';
+    DateTime parsedDate;
+    try {
+      parsedDate = DateTime.parse(bookingDateValue);
+    } catch (_) {
+      parsedDate = DateTime.now();
+    }
+
+    return _BookingItem(
+      id: json['id']?.toString() ?? '',
+      courtId: json['courtId']?.toString() ?? '',
+      bookingDate: parsedDate,
+      startTime: json['startTime']?.toString() ?? '',
+      endTime: json['endTime']?.toString() ?? '',
     );
   }
 }

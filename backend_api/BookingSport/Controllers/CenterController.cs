@@ -11,7 +11,6 @@ namespace BookingSport.Controllers
     public class CenterController : ControllerBase
     {
         private readonly BookingDbContext _context;
-
         public CenterController(BookingDbContext context)
         {
             _context = context;
